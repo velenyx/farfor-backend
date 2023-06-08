@@ -6,12 +6,20 @@
   ```python -m venv venv```
 3) Устанавливаем библиотеки:
   ```pip install requirements.txt```
-4) Создаем миграции:
+4) Файл .env.dist удалите последние символы .dist. Внутри в поля добавьте свои настройки:
+  ```
+DB_USER=Пользователь БД
+DB_PASS=Пароль БД
+DB_NAME=Имя БД
+DB_HOST=Хост, если локальный - 127.0.0.1
+DB_PORT=5432
+```
+5) Создаем миграции:
   ```python manage.py makemigrations```
   ```python manage.py migrate```
-5) Создаем админа:
+6) Создаем админа:
   ```python manage.py createsuperuser```
-6) Запускаем приложение:
+7) Запускаем приложение:
   ```python manage.py runserver```
 
 Приложение будет доступно на http://localhost:8000/
