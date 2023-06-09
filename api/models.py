@@ -189,7 +189,7 @@ class ProductSize(models.Model):
     )
 
     def __str__(self):
-        return f'{self.product} - f{self.size}'
+        return f'{self.product} - {self.size}'
 
 
 # Модели для Location
