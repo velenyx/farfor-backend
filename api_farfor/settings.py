@@ -154,7 +154,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(BASE_DIR, 'media')
 
 # Настройки CORS
-CORS_URLS_REGEX = r'^/api/.*$'
+CORS_URLS_REGEX = r'^.*/api/.*$'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
 ]
