@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'api',
+    'users_app',
 ]
 
 MIDDLEWARE = [
@@ -158,3 +159,6 @@ CORS_URLS_REGEX = r'^/api/.*$'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
 ]
+
+# Подключаемся к модели CustomUser(AbstractBaseUser)
+AUTH_USER_MODEL = "users_app.CustomUser"
