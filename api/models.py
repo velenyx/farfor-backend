@@ -3,7 +3,8 @@ from django.contrib.auth import get_user_model
 from django.db.models import UniqueConstraint
 
 from .configs import MEASUREMENT_UNIT
-from .validators import positive_number, validate_less_hundred
+from .validators import positive_number, validate_less_hundred, \
+    validate_hex_color
 
 User = get_user_model()
 
@@ -66,6 +67,25 @@ class Size(models.Model):
         return f'{self.size}{self.measurement}'
 
 
+class Promotion(models.Model):
+    class Meta:
+        verbose_name = 'Акция'
+        verbose_name_plural = 'Акции'
+
+    name = models.CharField(
+        'Название',
+        max_length=255,
+    )
+    hex_color = models.CharField(
+        'Цвет акции',
+        max_length=16,
+        validators=[validate_hex_color],
+    )
+
+    def __str__(self):
+        return self.name
+
+
 class Product(TimeBasedModel):
     class Meta:
         verbose_name = 'Товар'
@@ -82,12 +102,6 @@ class Product(TimeBasedModel):
     )
     description = models.TextField(
         'Описание',
-    )
-    promotion = models.CharField(
-        'Акция',
-        max_length=100,
-        null=True,
-        blank=True,
     )
     discount = models.IntegerField(
         'Скидка',
@@ -115,6 +129,13 @@ class Product(TimeBasedModel):
     carbohydrates = models.IntegerField(
         'Углероды',
         validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    promotion = models.ForeignKey(
+        Promotion,
+        on_delete=models.CASCADE,
+        related_name='products',
         null=True,
         blank=True,
     )

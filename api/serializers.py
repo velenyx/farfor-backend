@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Product, Property, ProductSize, User, Size
+from .models import Product, Property, ProductSize, User, Size, Promotion
 
 
 class PropertySerializer(serializers.ModelSerializer):
@@ -24,9 +24,23 @@ class SizeProductSerializer(serializers.ModelSerializer):
         source='size.id'
     )
     size = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+    weight = serializers.SerializerMethodField()
 
     def get_size(self, obj):
         return f'{obj.size.size}{obj.size.measurement}'
+
+    def get_price(self, obj):
+        return f'{obj.price}₽'
+
+    def get_weight(self, obj):
+        return f'{obj.weight} г'
+
+
+class PromotionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Promotion
+        fields = ('pk', 'name', 'hex_color')
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -47,6 +61,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     kpfc = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+    promotion = PromotionSerializer(read_only=True)
     property = PropertySerializer(many=True, read_only=True)
     sizes = SizeProductSerializer(many=True, read_only=True)
 
