@@ -195,4 +195,14 @@ class ProductSize(models.Model):
 # Модели для Location
 class Location(models.Model):
     class Meta:
-        verbose_name = ''
+        verbose_name = 'Локация'
+        verbose_name_plural = 'Локации'
+
+    country = models.CharField(
+        'Страна',
+        max_length=255,
+    )
+    city = models.CharField(
+        'Город',
+        max_length=255,
+    )

@@ -70,3 +70,9 @@ class UserSerializer(serializers.ModelSerializer):
             'username',
             'email',
         )
+
+
+class UserPkTokenLogin(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('pk',)

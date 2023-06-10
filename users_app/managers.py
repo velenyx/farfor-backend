@@ -24,7 +24,7 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_user(self, username, email=None, password=None, **kwargs):
+    def create_user(self, username=None, email=None, password=None, **kwargs):
         kwargs.setdefault('is_superuser', False)
         return self._create_user(
             username=username, email=email, password=password, **kwargs
