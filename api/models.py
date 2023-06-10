@@ -61,8 +61,6 @@ class Size(models.Model):
         'Единица измерения',
         choices=MEASUREMENT_UNIT,
         max_length=2,
-        null=True,
-        blank=True,
     )
 
     def __str__(self):
@@ -201,6 +199,8 @@ class ProductSize(models.Model):
         Size,
         on_delete=models.CASCADE,
         related_name='products',
+        null=True,
+        blank=True,
     )
     price = models.IntegerField(
         'Цена',
