@@ -61,6 +61,8 @@ class Size(models.Model):
         'Единица измерения',
         choices=MEASUREMENT_UNIT,
         max_length=2,
+        null=True,
+        blank=True,
     )
 
     def __str__(self):
