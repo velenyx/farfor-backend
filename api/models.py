@@ -60,7 +60,7 @@ class Size(models.Model):
     measurement = models.CharField(
         'Единица измерения',
         choices=MEASUREMENT_UNIT,
-        max_length=10,
+        max_length=2,
     )
 
     def __str__(self):
