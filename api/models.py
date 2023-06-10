@@ -199,8 +199,6 @@ class ProductSize(models.Model):
         Size,
         on_delete=models.CASCADE,
         related_name='products',
-        null=True,
-        blank=True,
     )
     price = models.IntegerField(
         'Цена',
