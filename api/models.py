@@ -155,7 +155,7 @@ class Product(TimeBasedModel):
     )
 
     def __str__(self):
-        return self.name
+        return f'{self.kind} - {self.name}'
 
 
 class ProductProperty(models.Model):
@@ -172,6 +172,7 @@ class ProductProperty(models.Model):
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
+        related_name='properties',
         verbose_name='Товар',
     )
     property = models.ForeignKey(
@@ -211,6 +212,130 @@ class ProductSize(models.Model):
 
     def __str__(self):
         return f'{self.product} - {self.size}'
+
+
+# Модели для Collection
+class Collection(TimeBasedModel):
+    class Meta:
+        verbose_name = 'Коллекция'
+        verbose_name_plural = 'Коллекции'
+
+    kind = models.CharField(
+        'Разновидность',
+        max_length=50,
+    )
+    name = models.CharField(
+        'Название',
+        max_length=70,
+    )
+    description = models.TextField(
+        'Описание',
+    )
+    discount = models.IntegerField(
+        'Скидка',
+        validators=[positive_number, validate_less_hundred],
+        default=0,
+    )
+    calorie = models.IntegerField(
+        'Калории',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    proteins = models.IntegerField(
+        'Белки',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    fats = models.IntegerField(
+        'Жиры',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    carbohydrates = models.IntegerField(
+        'Углероды',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    promotion = models.ForeignKey(
+        Promotion,
+        on_delete=models.CASCADE,
+        related_name='collections',
+        null=True,
+        blank=True,
+    )
+    price = models.IntegerField(
+        'Цена',
+        validators=[positive_number],
+    )
+    weight = models.IntegerField(
+        'Вес',
+        validators=[positive_number],
+    )
+    product = models.ManyToManyField(
+        Product,
+        through='CollectionProduct',
+        verbose_name='Товар',
+    )
+    property = models.ManyToManyField(
+        Property,
+        through='CollectionProperty',
+    )
+    image = models.ImageField(
+        'Картинка',
+        upload_to='products/images/',
+        blank=True,
+    )
+
+
+class CollectionProduct(models.Model):
+    collection = models.ForeignKey(
+        Collection,
+        on_delete=models.CASCADE,
+        related_name='products',
+        verbose_name='Коллекция',
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='collections',
+        verbose_name='Товар',
+    )
+    is_full = models.BooleanField(
+        'Полный товар',
+        default=True,
+    )
+
+
+class CollectionProperty(models.Model):
+    class Meta:
+        verbose_name = 'Коллекция - Свойство'
+        verbose_name_plural = 'Коллекции - Свойства'
+        constraints = [
+            UniqueConstraint(
+                fields=('collection', 'property'),
+                name='unique_collection_property',
+            ),
+        ]
+
+    collection = models.ForeignKey(
+        Collection,
+        on_delete=models.CASCADE,
+        related_name='properties',
+        verbose_name='Коллекция',
+    )
+    property = models.ForeignKey(
+        Property,
+        on_delete=models.CASCADE,
+        related_name='collections',
+        verbose_name='Свойство',
+    )
+
+    def __str__(self):
+        return f'{self.collection} - {self.property}'
 
 
 # Модели для Location
