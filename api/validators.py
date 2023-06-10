@@ -7,6 +7,11 @@ positive_number = validators.RegexValidator(
     message='Число должно быть положительным',
 )
 
+validate_hex_color = validators.RegexValidator(
+    regex='^#[a-zA-Z0-9]+$',
+    message='Неправильный формат цвета',
+)
+
 
 def validate_less_hundred(value):
     if value > 100:
