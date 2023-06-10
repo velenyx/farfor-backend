@@ -21,11 +21,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         'username',
         max_length=255,
         unique=True,
+        null=True,
     )
     email = models.EmailField(
         'Электронная почта',
         max_length=255,
         unique=True,
+        null=True,
     )
     first_name = models.CharField(
         'Имя',
@@ -49,6 +51,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
 
     objects = CustomUserManager()
 

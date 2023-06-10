@@ -16,7 +16,8 @@ class UserCreationForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields = ["username", "email", "first_name", "date_of_birth", "sex"]
+        fields = ["username", "email", "first_name",
+                  "date_of_birth", "sex", "is_verified"]
 
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
@@ -49,15 +50,13 @@ class UserAdmin(BaseUserAdmin):
     add_form = UserCreationForm
 
     list_display = ["username", "email", "first_name",
-                    "date_of_birth", "sex", "is_admin"]
+                    "date_of_birth", "sex", "is_verified", "is_admin"]
     list_filter = ["is_admin"]
     fieldsets = [
         (None, {"fields": ["email", "password"]}),
         ("Personal info", {"fields": ["first_name", "date_of_birth", "sex"]}),
-        ("Permissions", {"fields": ["is_admin"]}),
+        ("Permissions", {"fields": ["is_admin", "is_verified"]}),
     ]
-    # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin
-    # overrides get_fieldsets to use this attribute when creating a user.
     add_fieldsets = [
         (
             None,
@@ -65,7 +64,7 @@ class UserAdmin(BaseUserAdmin):
                 "classes": ["wide"],
                 "fields": [
                     "username", "email", "date_of_birth", "first_name", "sex",
-                    "password1", "password2",
+                    "is_verified", "password1", "password2",
                 ],
             },
         ),
