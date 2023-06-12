@@ -168,3 +168,12 @@ CORS_ALLOWED_ORIGINS = [
 
 # Подключаемся к модели CustomUser(AbstractBaseUser)
 AUTH_USER_MODEL = "users_app.CustomUser"
+
+# Email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.yandex.ru'
+EMAIL_PORT = 465
+EMAIL_HOST_USER = 'django-auth@kantegory.me'
+EMAIL_HOST_PASSWORD = 'secret123'
+EMAIL_USE_SSL = True
+DEFAULT_FROM_EMAIL = 'django-auth@kantegory.me'

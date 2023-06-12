@@ -190,19 +190,3 @@ class ProductSize(models.Model):
 
     def __str__(self):
         return f'{self.product} - {self.size}'
-
-
-# Модели для Location
-class Location(models.Model):
-    class Meta:
-        verbose_name = 'Локация'
-        verbose_name_plural = 'Локации'
-
-    country = models.CharField(
-        'Страна',
-        max_length=255,
-    )
-    city = models.CharField(
-        'Город',
-        max_length=255,
-    )
