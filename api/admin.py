@@ -1,6 +1,8 @@
 from django.contrib import admin
 
-from .models import Product, Collection, Size, Property, Promotion
+from .models import (
+    Product, Collection, Size, Property, Promotion, Country, City,
+)
 
 
 class ProductPropertyInline(admin.TabularInline):
@@ -50,5 +52,15 @@ class PropertyAdmin(admin.ModelAdmin):
 
 
 @admin.register(Size)
-class Kind(admin.ModelAdmin):
+class KindAdmin(admin.ModelAdmin):
     list_display = ('pk', 'size', 'measurement')
+
+
+@admin.register(Country)
+class CountryAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name')
+
+
+@admin.register(City)
+class CityAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'country')

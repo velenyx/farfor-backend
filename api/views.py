@@ -1,7 +1,8 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
 
-from .models import Product, User, Collection
-from .serializers import ProductSerializer, CollectionSerializer
+from .models import Product, User, Collection, Country
+from .serializers import ProductSerializer, CollectionSerializer, \
+    LocationSerializer
 
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
@@ -19,3 +20,8 @@ class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
 # class UserViewSet(viewsets.ReadOnlyModelViewSet):
 #     queryset = User.objects.all()
 #     serializer_class = UserSerializer
+
+
+class LocationViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Country.objects.all()
+    serializer_class = LocationSerializer
