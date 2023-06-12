@@ -1,14 +1,16 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt import tokens
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import Product, User
 from .permissions import AnonUserPermission
-from .serializers import ProductSerializer, UserPkTokenLogin
+from .serializers import ProductSerializer, UserPkTokenLogin, \
+    EmailUserSerializer
 
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
@@ -21,6 +23,16 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     # serializer_class = UserSerializer
 
 
+class AuthenticateUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = EmailUserSerializer
+
+    def post(self, request):
+
+        return Response({'auth': 'login'})
+
+
+
 class ObtainAuthToken(APIView):
     permission_classes = [AnonUserPermission]
 
@@ -30,9 +42,9 @@ class ObtainAuthToken(APIView):
             user = get_object_or_404(User, pk=pk)
         else:
             user = User()
-            # user.save()
-        # jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
-        # jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
-        # payload = jwt_payload_handler(user)
-        # token = jwt_encode_handler(payload)
-        return Response({'auth_token': 'yes'})
+        refresh = tokens.RefreshToken.for_user(user)
+        content = {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token)
+        }
+        return Response(content)

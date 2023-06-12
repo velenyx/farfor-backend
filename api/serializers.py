@@ -62,17 +62,10 @@ class ProductSerializer(serializers.ModelSerializer):
         return '/media/' + obj.image.name
 
 
-class UserSerializer(serializers.ModelSerializer):
+class EmailUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
             'pk',
-            'username',
             'email',
         )
-
-
-class UserPkTokenLogin(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('pk',)
