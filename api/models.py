@@ -134,7 +134,7 @@ class Product(TimeBasedModel):
     )
     promotion = models.ForeignKey(
         Promotion,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='products',
         null=True,
         blank=True,
@@ -219,6 +219,7 @@ class Collection(TimeBasedModel):
     class Meta:
         verbose_name = 'Коллекция'
         verbose_name_plural = 'Коллекции'
+        ordering = ['kind']
 
     kind = models.CharField(
         'Разновидность',
@@ -262,17 +263,13 @@ class Collection(TimeBasedModel):
     )
     promotion = models.ForeignKey(
         Promotion,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='collections',
         null=True,
         blank=True,
     )
     price = models.IntegerField(
         'Цена',
-        validators=[positive_number],
-    )
-    weight = models.IntegerField(
-        'Вес',
         validators=[positive_number],
     )
     product = models.ManyToManyField(
@@ -339,6 +336,44 @@ class CollectionProperty(models.Model):
 
 
 # Модели для Location
-class Location(models.Model):
+class Country(models.Model):
     class Meta:
-        verbose_name = ''
+        verbose_name = 'Страна'
+        verbose_name_plural = 'Страны'
+        ordering = ('name',)
+
+    name = models.CharField(
+        'Название',
+        max_length=70,
+        unique=True,
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class City(models.Model):
+    class Meta:
+        verbose_name = 'Город'
+        verbose_name_plural = 'Города'
+        ordering = ('name',)
+        constraints = [
+            UniqueConstraint(
+                fields=('name', 'country'),
+                name='unique_location',
+            ),
+        ]
+
+    name = models.CharField(
+        'Название',
+        max_length=70,
+    )
+    country = models.ForeignKey(
+        Country,
+        on_delete=models.CASCADE,
+        related_name='cities',
+        verbose_name='Страна',
+    )
+
+    def __str__(self):
+        return f'{self.country} - {self.name}'
