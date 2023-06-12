@@ -1,3 +1,5 @@
+import math
+
 from rest_framework import serializers
 
 from .models import Product, Property, ProductSize, User, Size, Promotion, \
@@ -36,7 +38,7 @@ class PropertySerializer(serializers.ModelSerializer):
 class SizeProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductSize
-        fields = ('pk', 'size', 'price', 'weight')
+        fields = ('pk', 'size', 'price', 'discount_price', 'weight')
 
     pk = serializers.PrimaryKeyRelatedField(
         queryset=Size.objects.all(),
@@ -44,6 +46,7 @@ class SizeProductSerializer(serializers.ModelSerializer):
     )
     size = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
+    discount_price = serializers.SerializerMethodField()
     weight = serializers.SerializerMethodField()
 
     def get_size(self, obj):
@@ -51,6 +54,9 @@ class SizeProductSerializer(serializers.ModelSerializer):
 
     def get_price(self, obj):
         return f'{obj.price}₽'
+
+    def get_discount_price(self, obj):
+        return f'{math.ceil(obj.price * (1 - obj.product.discount / 100))}₽'
 
     def get_weight(self, obj):
         return {obj.weight}
@@ -78,6 +84,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'sizes',
         )
 
+    discount = serializers.SerializerMethodField()
     kpfc = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     promotion = PromotionSerializer(read_only=True)
@@ -85,6 +92,9 @@ class ProductSerializer(serializers.ModelSerializer):
         many=True, read_only=True, source='property'
     )
     sizes = SizeProductSerializer(many=True, read_only=True)
+
+    def get_discount(self, obj):
+        return obj.discount if obj.discount else None
 
     def get_kpfc(self, obj):
         return {

@@ -106,7 +106,8 @@ class Product(TimeBasedModel):
     discount = models.IntegerField(
         'Скидка',
         validators=[positive_number, validate_less_hundred],
-        default=0,
+        null=True,
+        blank=True,
     )
     calorie = models.IntegerField(
         'Калории',
