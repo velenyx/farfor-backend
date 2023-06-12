@@ -1,7 +1,25 @@
 from rest_framework import serializers
 
 from .models import Product, Property, ProductSize, User, Size, Promotion, \
-    Collection, CollectionProduct
+    Collection, CollectionProduct, Country, City
+
+
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = City
+        fields = ('pk', 'name')
+
+
+class LocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Country
+        fields = ('pk', 'country', 'cities')
+
+    country = serializers.CharField(source='name')
+    cities = serializers.SerializerMethodField()
+
+    def get_cities(self, obj):
+        return [city.name for city in obj.cities.all()]
 
 
 class PropertySerializer(serializers.ModelSerializer):
