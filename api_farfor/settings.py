@@ -65,7 +65,7 @@ ROOT_URLCONF = 'api_farfor.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [Path(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -130,7 +130,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = Path(BASE_DIR, 'static')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -171,9 +170,10 @@ AUTH_USER_MODEL = "users_app.CustomUser"
 
 # Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.yandex.ru'
+EMAIL_HOST = env.str('EMAIL_HOST')
 EMAIL_PORT = 465
-EMAIL_HOST_USER = 'django-auth@kantegory.me'
-EMAIL_HOST_PASSWORD = 'secret123'
+EMAIL_HOST_USER = env.str('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = env.str('EMAIL_HOST_USER')
+EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
-DEFAULT_FROM_EMAIL = 'django-auth@kantegory.me'

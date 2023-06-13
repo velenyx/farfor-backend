@@ -62,10 +62,63 @@ class ProductSerializer(serializers.ModelSerializer):
         return '/media/' + obj.image.name
 
 
-class EmailUserSerializer(serializers.ModelSerializer):
+# Для Users
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'pk',
+            'client_id',
             'email',
+            'full_name',
+            'birthday',
+            'sex',
+            'code',
+            'is_verified',
         )
+
+    client_id = serializers.PrimaryKeyRelatedField(
+        source='pk', queryset=User.objects.all())
+
+
+class EmailLoginSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'password')
+        extra_kwargs = {
+            'email': {'required': True},
+            'password': {'required': True},
+        }
+
+
+class SetPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField()
+    re_password = serializers.CharField()
+
+    def validate(self, data):
+        if data.get('password') != data.get('re_password'):
+            raise serializers.ValidationError('Пароли не совпадают')
+        return data
+
+
+class EmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=False)
+
+
+class CodeSerializer(serializers.Serializer):
+    code = serializers.CharField()
+
+    def validate(self, data):
+        code = data.get('code')
+        if len(code) > 5:
+            raise serializers.ValidationError(
+                'Поле code должно быть меньше 5')
+        for v in code:
+            try:
+                int(v)
+            except Exception:
+                raise serializers.ValidationError(
+                    'Поле code должна состоять из цифр'
+                )
+
+        return data
+

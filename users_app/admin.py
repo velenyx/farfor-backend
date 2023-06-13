@@ -16,8 +16,8 @@ class UserCreationForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields = ["username", "email", "first_name",
-                  "date_of_birth", "sex", "is_verified"]
+        fields = ["username", "email", "full_name",
+                  "birthday", "sex", 'code', "is_verified"]
 
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
@@ -40,8 +40,8 @@ class UserChangeForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = [
-            "username", "email", "first_name", "password", "date_of_birth",
-            "sex", "is_active", "is_admin",
+            "username", "email", "full_name", "birthday",
+            "sex", 'code', "is_active", "is_admin", "password",
         ]
 
 
@@ -49,12 +49,13 @@ class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
 
-    list_display = ["username", "email", "first_name",
-                    "date_of_birth", "sex", "is_verified", "is_admin"]
+    list_display = ["pk", "username", "email", "full_name",
+                    "birthday", "sex", 'code', "is_verified", "is_admin"]
     list_filter = ["is_admin"]
     fieldsets = [
         (None, {"fields": ["email", "password"]}),
-        ("Personal info", {"fields": ["first_name", "date_of_birth", "sex"]}),
+        ("Personal info", {"fields": [
+            "full_name", "birthday", "sex", "code"]}),
         ("Permissions", {"fields": ["is_admin", "is_verified"]}),
     ]
     add_fieldsets = [
@@ -63,8 +64,8 @@ class UserAdmin(BaseUserAdmin):
             {
                 "classes": ["wide"],
                 "fields": [
-                    "username", "email", "date_of_birth", "first_name", "sex",
-                    "is_verified", "password1", "password2",
+                    "username", "email", "birthday", "full_name", "sex",
+                    'code', "is_verified", "password1", "password2",
                 ],
             },
         ),

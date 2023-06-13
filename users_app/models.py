@@ -10,6 +10,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        ordering = ('pk',)
         constraints = [
             UniqueConstraint(
                 fields=('username', 'email'),
@@ -26,15 +27,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(
         'Электронная почта',
         max_length=255,
-        unique=True,
+        # unique=True,
         null=True,
     )
-    first_name = models.CharField(
-        'Имя',
+    full_name = models.CharField(
+        'Полное имя',
         max_length=255,
         null=True,
     )
-    date_of_birth = models.DateField(
+    birthday = models.DateField(
         'Дата рождения',
         null=True,
     )
@@ -60,7 +61,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     def __str__(self):
-        return self.email
+        if self.email:
+            return self.email
+        return str(self.pk)
 
     @property
     def is_staff(self):

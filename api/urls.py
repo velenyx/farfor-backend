@@ -5,10 +5,11 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, \
     TokenRefreshView
 
-from .views import ProductViewSet, ObtainAuthToken
+from .views import ProductViewSet, ObtainAuthToken, UserViewSet
 
 router = DefaultRouter()
 
+router.register('users', UserViewSet)
 router.register('products', ProductViewSet)
 
 app_name = 'app'
