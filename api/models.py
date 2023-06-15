@@ -377,14 +377,3 @@ class City(models.Model):
 
     def __str__(self):
         return f'{self.country} - {self.name}'
-
-
-# Акции
-class Sale(models.Model):
-    class Meta:
-        verbose_name = 'Акция'
-        verbose_name_plural = 'Акции'
-
-    image = models.ImageField(
-        upload_to='sales/images/'
-    )
