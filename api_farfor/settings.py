@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+from datetime import timedelta
 from pathlib import Path
 from environs import Env
 
@@ -44,8 +45,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'rest_framework',
-    'rest_framework.authtoken',
     'api',
+    'users_app',
 ]
 
 MIDDLEWARE = [
@@ -64,7 +65,7 @@ ROOT_URLCONF = 'api_farfor.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [Path(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -129,7 +130,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = Path(BASE_DIR, 'static')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -142,11 +142,17 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
     'SEARCH_PARAM': 'name',
+}
+
+# Настройки JWT
+SIMPLE_JWT = {
+   'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+   'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 # Медиа
@@ -158,3 +164,16 @@ CORS_URLS_REGEX = r'^/api/.*$'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
 ]
+
+# Подключаемся к модели CustomUser(AbstractBaseUser)
+AUTH_USER_MODEL = "users_app.CustomUser"
+
+# Email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env.str('EMAIL_HOST')
+EMAIL_PORT = 465
+EMAIL_HOST_USER = env.str('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = env.str('EMAIL_HOST_USER')
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
