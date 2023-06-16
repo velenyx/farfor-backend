@@ -22,12 +22,7 @@ router.register('locations', LocationViewSet)
 
 app_name = 'app'
 urlpatterns = [
-    # path('send_code', )
     path('auth/token/', ObtainAuthToken.as_view(), name='get_token'),
-    # path('token/', TokenObtainPairView.as_view(),
-    #      name='token_obtain_pair'),
-    # path('token/refresh/', TokenRefreshView.as_view(),
-    #      name='token_refresh'),
     path('', include(router.urls)),
 ]
 
