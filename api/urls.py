@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     ProductViewSet,
-    CollectionViewSet,
+    # CollectionViewSet,
     LocationViewSet,
     ObtainAuthToken,
     UserViewSet, PromotionViewSet, CategoryViewSet
@@ -15,7 +15,7 @@ router = DefaultRouter()
 
 router.register('users', UserViewSet)
 router.register('products', ProductViewSet)
-router.register('collections', CollectionViewSet)
+# router.register('collections', CollectionViewSet)
 router.register('categories', CategoryViewSet)
 router.register('promotions', PromotionViewSet)
 router.register('locations', LocationViewSet)

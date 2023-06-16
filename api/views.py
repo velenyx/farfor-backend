@@ -14,7 +14,7 @@ from .models import Product, User, Collection, Country, Promotion, Category
 from .permissions import AnonUserPermission
 from .serializers import (
     ProductSerializer,
-    CollectionSerializer,
+    # CollectionSerializer,
     LocationSerializer,
     EmailSerializer,
     UserSerializer,
@@ -31,11 +31,6 @@ from .serializers import (
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-
-
-class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Collection.objects.all()
-    serializer_class = CollectionSerializer
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):

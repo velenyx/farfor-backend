@@ -8,28 +8,9 @@ from .models import (
     Size,
     Promotion,
     Collection,
-    CollectionProduct,
     Country,
     City, Category, Banner, ProductCategory,
 )
-
-
-class CitySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = City
-        fields = ('pk', 'name')
-
-
-class LocationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Country
-        fields = ('pk', 'country', 'cities')
-
-    country = serializers.CharField(source='name')
-    cities = serializers.SerializerMethodField()
-
-    def get_cities(self, obj):
-        return [city.name for city in obj.cities.all()]
 
 
 class PropertySerializer(serializers.ModelSerializer):
@@ -70,29 +51,6 @@ class ShortPromotionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
         fields = ('pk', 'name', 'hex_color')
-
-
-class ShortProductSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CollectionProduct
-        fields = ('pk', 'name', 'description', 'image')
-
-    name = serializers.SerializerMethodField(source='product.name')
-    description = serializers.CharField(source='product.description')
-    image = serializers.SerializerMethodField()
-
-    def get_name(self, obj):
-        if obj.is_full:
-            return obj.product.name
-        elif obj.product.sizes.last().size.measurement == 'шт':
-            if len(obj.product.sizes.all()) > 1:
-                return f'{obj.product.name} 1/2'
-            return obj.product.name
-        return f'{obj.product.name}см'
-
-    def get_image(self, obj):
-        if obj.product.image.name:
-            return '/media/' + obj.product.image.name
 
 
 class BannerSerializer(serializers.ModelSerializer):
@@ -139,6 +97,32 @@ class DetailPromotionSerializer(serializers.ModelSerializer):
         return conditions
 
 
+class ShortProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Collection
+        fields = ('pk', 'name', 'description', 'image')
+
+    pk = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), source='child_product.id')
+    name = serializers.SerializerMethodField(source='child_product.name')
+    description = serializers.CharField(source='child_product.description')
+    image = serializers.SerializerMethodField()
+
+    def get_name(self, obj):
+        if obj.is_full:
+            return obj.child_product.name
+        elif obj.child_product.sizes.last().size.measurement == 'шт':
+            if len(obj.child_product.sizes.all()) > 1:
+                return f'{obj.child_product.name} 1/2'
+            return obj.child_product.name
+        return (f'{obj.child_product.name} '
+                f'{obj.child_product.sizes.last().size.size}см')
+
+    def get_image(self, obj):
+        if obj.child_product.image.name:
+            return '/media/' + obj.child_product.image.name
+
+
 # Product
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -149,82 +133,51 @@ class ProductSerializer(serializers.ModelSerializer):
             'description',
             'promotion',
             'discount',
+            'total_weight',
+            'amount',
             'kpfc',
             'image',
+            'components',
             'properties',
             'sizes',
         )
 
-    kpfc = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
-    promotion = ShortPromotionSerializer(read_only=True)
-    properties = PropertySerializer(
-        many=True, read_only=True, source='property')
-    sizes = SizeProductSerializer(many=True, read_only=True)
-
-    def get_kpfc(self, obj):
-        return {
-            'calorie': obj.calorie,
-            'proteins': obj.proteins,
-            'fats': obj.fats,
-            'carbohydrates': obj.carbohydrates
-        }
-
-    def get_image(self, obj):
-        if obj.image:
-            return '/media/' + obj.image.name
-
-
-# Collection
-class CollectionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Collection
-        fields = (
-            'pk',
-            'name',
-            'description',
-            'price',
-            'weight',
-            'amount',
-            'promotion',
-            'discount',
-            'kpfc',
-            'image',
-            'properties',
-            'products',
-        )
-
-    price = serializers.SerializerMethodField()
-    weight = serializers.SerializerMethodField()
+    total_weight = serializers.SerializerMethodField()
     amount = serializers.SerializerMethodField()
     kpfc = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     promotion = ShortPromotionSerializer(read_only=True)
+    components = ShortProductSerializer(many=True, read_only=True)
     properties = PropertySerializer(
         many=True, read_only=True, source='property')
-    products = ShortProductSerializer(many=True, read_only=True)
+    sizes = SizeProductSerializer(many=True, read_only=True)
 
-    def get_price(self, obj):
-        return f'{obj.price}₽'
-
-    def get_weight(self, obj):
+    def get_total_weight(self, obj):
         total_weight = 0
-        for collection in obj.products.all():
-            max_size = 0
-            for size in collection.product.sizes.all():
-                max_size = size.weight if size.weight > max_size else max_size
 
-            total_weight += max_size
+        for collection in obj.components.all():
+            sizes = [size.weight for size in collection.child_product.sizes.all()]
+            if collection.is_full:
+                total_weight += max(sizes)
+                continue
+            total_weight += min(sizes)
 
+        if not total_weight:
+            return None
         return total_weight
 
     def get_amount(self, obj):
+        if not obj.components.all():
+            return None
+
         amount = 0
-        for collection in obj.products.all():
-            if collection.product.sizes.last().size.measurement == 'см':
+
+        for collection in obj.components.all():
+            print(collection.child_product.sizes.all())
+            if collection.child_product.sizes.last().size.measurement == 'см':
                 return None
             sorted_sizes = sorted(
-                map(lambda x: x.size.size, collection.product.sizes.all())
+                map(lambda x: x.size.size, collection.child_product.sizes.all())
             )
 
             if collection.is_full:
@@ -268,8 +221,11 @@ class CategoryProductsSerializer(serializers.ModelSerializer):
             'description',
             'promotion',
             'discount',
+            'total_weight',
+            'amount',
             'kpfc',
             'image',
+            'components',
             'properties',
             'sizes',
         )
@@ -280,13 +236,50 @@ class CategoryProductsSerializer(serializers.ModelSerializer):
     description = serializers.CharField(source='product.description')
     promotion = ShortPromotionSerializer(
         read_only=True, source='product.promotion')
+    total_weight = serializers.SerializerMethodField()
+    amount = serializers.SerializerMethodField()
     discount = serializers.IntegerField(source='product.discount')
     kpfc = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+    components = ShortProductSerializer(many=True, read_only=True, source='product.components')
     properties = PropertySerializer(
         many=True, read_only=True, source='product.property')
     sizes = SizeProductSerializer(
         many=True, read_only=True, source='product.sizes')
+
+    def get_total_weight(self, obj):
+        total_weight = 0
+
+        for collection in obj.product.components.all():
+            sizes = [size.weight for size in collection.child_product.sizes.all()]
+            if collection.is_full:
+                total_weight += max(sizes)
+                continue
+            total_weight += min(sizes)
+
+        if not total_weight:
+            return None
+        return total_weight
+
+    def get_amount(self, obj):
+        if not obj.product.components.all():
+            return None
+
+        amount = 0
+
+        for collection in obj.product.components.all():
+            if collection.child_product.sizes.last().size.measurement == 'см':
+                return None
+            sorted_sizes = sorted(
+                map(lambda x: x.size.size, collection.child_product.sizes.all())
+            )
+
+            if collection.is_full:
+                amount += sorted_sizes[-1]
+            else:
+                amount += sorted_sizes[0]
+
+        return f'{amount} шт'
 
     def get_kpfc(self, obj):
         return {
@@ -381,3 +374,20 @@ class CodeSerializer(serializers.Serializer):
 
         return data
 
+
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = City
+        fields = ('pk', 'name')
+
+
+class LocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Country
+        fields = ('pk', 'country', 'cities')
+
+    country = serializers.CharField(source='name')
+    cities = serializers.SerializerMethodField()
+
+    def get_cities(self, obj):
+        return [city.name for city in obj.cities.all()]

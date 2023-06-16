@@ -22,16 +22,21 @@ class ProductCategoryInline(admin.TabularInline):
     model = Product.category.through
 
 
-class CollectionCategoryInline(admin.TabularInline):
-    model = Collection.category.through
+class ProductCollectionInline(admin.TabularInline):
+    model = Product.collection.through
+    fk_name = 'parent_product'
 
 
-class CollectionProductInline(admin.TabularInline):
-    model = Collection.product.through
-
-
-class CollectionPropertyInline(admin.TabularInline):
-    model = Collection.property.through
+# class CollectionCategoryInline(admin.TabularInline):
+#     model = Collection.category.through
+#
+#
+# class CollectionProductInline(admin.TabularInline):
+#     model = Collection.product.through
+#
+#
+# class CollectionPropertyInline(admin.TabularInline):
+#     model = Collection.property.through
 
 
 class CategoryBannerInline(admin.TabularInline):
@@ -47,23 +52,24 @@ class ProductAdmin(admin.ModelAdmin):
         ProductPropertyInline,
         ProductSizeInline,
         ProductCategoryInline,
+        ProductCollectionInline,
     )
     search_fields = ('category', 'name',)
     empty_value_display = '--пусто--'
 
 
-@admin.register(Collection)
-class CollectionAdmin(admin.ModelAdmin):
-    list_display = (
-        'pk', 'name', 'description', 'promotion', 'discount'
-    )
-    inlines = (
-        CollectionPropertyInline,
-        CollectionProductInline,
-        CollectionCategoryInline,
-    )
-    search_fields = ('category', 'name',)
-    empty_value_display = '--пусто--'
+# @admin.register(Collection)
+# class CollectionAdmin(admin.ModelAdmin):
+#     list_display = (
+#         'pk', 'name', 'description', 'promotion', 'discount'
+#     )
+#     inlines = (
+#         CollectionPropertyInline,
+#         CollectionProductInline,
+#         CollectionCategoryInline,
+#     )
+#     search_fields = ('category', 'name',)
+#     empty_value_display = '--пусто--'
 
 
 @admin.register(Category)
