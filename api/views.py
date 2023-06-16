@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt import tokens
 
-from .models import Product, User, Collection, Country
+from .models import Product, User, Collection, Country, Promotion, Category
 from .permissions import AnonUserPermission
 from .serializers import (
     ProductSerializer,
@@ -21,6 +21,10 @@ from .serializers import (
     SetPasswordSerializer,
     CodeSerializer,
     EmailLoginSerializer,
+    PromotionSerializer,
+    DetailPromotionSerializer,
+    CategorySerializer,
+    DetailCategorySerializer,
 )
 
 
@@ -28,13 +32,30 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
-    # def get_queryset(self):
-    #     return Product.objects.filter(is_full=True)
-
 
 class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Collection.objects.all()
     serializer_class = CollectionSerializer
+
+
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    lookup_field = 'slug'
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return CategorySerializer
+        return DetailCategorySerializer
+
+
+class PromotionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Promotion.objects.all()
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return PromotionSerializer
+        return DetailPromotionSerializer
 
 
 class LocationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -93,7 +114,7 @@ class UserViewSet(viewsets.ModelViewSet):
         )
         msg = EmailMultiAlternatives(
             subject=f'Код подтверждения - {code}',
-            to=['jotaro.kyoujo@yandex.ru']
+            to=[email]
         )
         msg.attach_alternative(html_body, 'text/html')
 
@@ -121,7 +142,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        user = User.objects.filter(email=request.user.email, is_verified=True)
+        user = User.objects.filter(
+            email=request.user.email, is_verified=True
+        ).first()
         if not user:
             user = request.user
 

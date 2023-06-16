@@ -8,7 +8,7 @@ from .views import (
     CollectionViewSet,
     LocationViewSet,
     ObtainAuthToken,
-    UserViewSet
+    UserViewSet, PromotionViewSet, CategoryViewSet
 )
 
 router = DefaultRouter()
@@ -16,6 +16,8 @@ router = DefaultRouter()
 router.register('users', UserViewSet)
 router.register('products', ProductViewSet)
 router.register('collections', CollectionViewSet)
+router.register('categories', CategoryViewSet)
+router.register('promotions', PromotionViewSet)
 router.register('locations', LocationViewSet)
 
 app_name = 'app'

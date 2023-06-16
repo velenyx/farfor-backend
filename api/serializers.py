@@ -1,7 +1,17 @@
 from rest_framework import serializers
 
-from .models import Product, Property, ProductSize, User, Size, Promotion, \
-    Collection, CollectionProduct, Country, City
+from .models import (
+    Product,
+    Property,
+    ProductSize,
+    User,
+    Size,
+    Promotion,
+    Collection,
+    CollectionProduct,
+    Country,
+    City, Category, Banner, ProductCategory,
+)
 
 
 class CitySerializer(serializers.ModelSerializer):
@@ -56,47 +66,10 @@ class SizeProductSerializer(serializers.ModelSerializer):
         return {obj.weight}
 
 
-class PromotionSerializer(serializers.ModelSerializer):
+class ShortPromotionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
         fields = ('pk', 'name', 'hex_color')
-
-
-class ProductSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Product
-        fields = (
-            'pk',
-            'kind',
-            'name',
-            'description',
-            'promotion',
-            'discount',
-            'kpfc',
-            'image',
-            'properties',
-            'sizes',
-        )
-
-    kpfc = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
-    promotion = PromotionSerializer(read_only=True)
-    properties = PropertySerializer(
-        many=True, read_only=True, source='property'
-    )
-    sizes = SizeProductSerializer(many=True, read_only=True)
-
-    def get_kpfc(self, obj):
-        return {
-            'calorie': obj.calorie,
-            'proteins': obj.proteins,
-            'fats': obj.fats,
-            'carbohydrates': obj.carbohydrates
-        }
-
-    def get_image(self, obj):
-        if obj.image:
-            return '/media/' + obj.image.name
 
 
 class ShortProductSerializer(serializers.ModelSerializer):
@@ -122,12 +95,92 @@ class ShortProductSerializer(serializers.ModelSerializer):
             return '/media/' + obj.product.image.name
 
 
+class BannerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Banner
+        fields = ('pk', 'title', 'description', 'image', 'slug')
+
+    image = serializers.SerializerMethodField()
+
+    def get_image(self, obj):
+        return '/media/' + obj.image.name
+
+
+# Promotion
+class PromotionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Promotion
+        fields = ('pk', 'slug', 'image')
+
+    image = serializers.SerializerMethodField()
+
+    def get_image(self, obj):
+        return '/media/' + obj.image.name
+
+
+class DetailPromotionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Promotion
+        fields = ('pk', 'title', 'description', 'image', 'conditions')
+
+    image = serializers.SerializerMethodField()
+    conditions = serializers.SerializerMethodField()
+
+    def get_image(self, obj):
+        return '/media/' + obj.image.name
+
+    def get_conditions(self, obj):
+        conditions = [value.condition.name for value in obj.conditions.all()]
+        if obj.start_date and obj.end_date:
+            date_condition = f'Период проведения акции: ' \
+                             f'{obj.start_date.strftime("%Y.%m.%d")} — ' \
+                             f'{obj.end_date.strftime("%Y.%m.%d")}'
+            conditions = [date_condition, *conditions]
+        return conditions
+
+
+# Product
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = (
+            'pk',
+            'name',
+            'description',
+            'promotion',
+            'discount',
+            'kpfc',
+            'image',
+            'properties',
+            'sizes',
+        )
+
+    kpfc = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    promotion = ShortPromotionSerializer(read_only=True)
+    properties = PropertySerializer(
+        many=True, read_only=True, source='property')
+    sizes = SizeProductSerializer(many=True, read_only=True)
+
+    def get_kpfc(self, obj):
+        return {
+            'calorie': obj.calorie,
+            'proteins': obj.proteins,
+            'fats': obj.fats,
+            'carbohydrates': obj.carbohydrates
+        }
+
+    def get_image(self, obj):
+        if obj.image:
+            return '/media/' + obj.image.name
+
+
+# Collection
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = (
             'pk',
-            'kind',
             'name',
             'description',
             'price',
@@ -146,8 +199,9 @@ class CollectionSerializer(serializers.ModelSerializer):
     amount = serializers.SerializerMethodField()
     kpfc = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
-    promotion = PromotionSerializer(read_only=True)
-    properties = PropertySerializer(many=True, read_only=True, source='property')
+    promotion = ShortPromotionSerializer(read_only=True)
+    properties = PropertySerializer(
+        many=True, read_only=True, source='property')
     products = ShortProductSerializer(many=True, read_only=True)
 
     def get_price(self, obj):
@@ -191,6 +245,80 @@ class CollectionSerializer(serializers.ModelSerializer):
     def get_image(self, obj):
         if obj.image:
             return '/media/' + obj.image.name
+
+
+# Category
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('pk', 'name', 'slug', 'image',)
+
+    image = serializers.SerializerMethodField()
+
+    def get_image(self, obj):
+        return '/media/' + obj.image.name
+
+
+class CategoryProductsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductCategory
+        fields = (
+            'pk',
+            'name',
+            'description',
+            'promotion',
+            'discount',
+            'kpfc',
+            'image',
+            'properties',
+            'sizes',
+        )
+
+    pk = serializers.PrimaryKeyRelatedField(
+        source='product.pk', read_only=True)
+    name = serializers.CharField(source='product.name')
+    description = serializers.CharField(source='product.description')
+    promotion = ShortPromotionSerializer(
+        read_only=True, source='product.promotion')
+    discount = serializers.IntegerField(source='product.discount')
+    kpfc = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    properties = PropertySerializer(
+        many=True, read_only=True, source='product.property')
+    sizes = SizeProductSerializer(
+        many=True, read_only=True, source='product.sizes')
+
+    def get_kpfc(self, obj):
+        return {
+            'calorie': obj.product.calorie,
+            'proteins': obj.product.proteins,
+            'fats': obj.product.fats,
+            'carbohydrates': obj.product.carbohydrates
+        }
+
+    def get_image(self, obj):
+        if obj.product.image:
+            return '/media/' + obj.product.image.name
+
+
+class DetailCategorySerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Category
+        fields = (
+            'pk', 'name', 'description', 'slug', 'image', 'banners', 'products',
+        )
+        lookup_field = 'slug'
+        extra_kwargs = {
+            'url': {'lookup_field': 'slug'}
+        }
+
+    image = serializers.SerializerMethodField()
+    banners = BannerSerializer(many=True, read_only=True, source='banner')
+    products = CategoryProductsSerializer(
+        many=True, read_only=True)
+
+    def get_image(self, obj):
+        return '/media/' + obj.image.name
 
 
 # Для Users

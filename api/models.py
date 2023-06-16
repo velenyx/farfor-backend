@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.db.models import UniqueConstraint
+from django.utils.text import slugify
 
 from .configs import MEASUREMENT_UNIT
 from .validators import positive_number, validate_less_hundred, \
@@ -67,6 +68,20 @@ class Size(models.Model):
         return f'{self.size}{self.measurement}'
 
 
+class Condition(models.Model):
+    class Meta:
+        verbose_name = 'Условие'
+        verbose_name_plural = 'Условия'
+
+    name = models.CharField(
+        'Название',
+        max_length=255,
+    )
+
+    def __str__(self):
+        return self.name
+
+
 class Promotion(models.Model):
     class Meta:
         verbose_name = 'Акция'
@@ -75,15 +90,139 @@ class Promotion(models.Model):
     name = models.CharField(
         'Название',
         max_length=255,
+        null=True,
+        blank=True,
+    )
+    title = models.CharField(
+        'Загаловок',
+        max_length=255,
+    )
+    description = models.TextField(
+        'Описание',
+    )
+    slug = models.SlugField(
+        unique=True,
+        null=False,
+        default="",
     )
     hex_color = models.CharField(
         'Цвет акции',
         max_length=16,
         validators=[validate_hex_color],
     )
+    start_date = models.DateField(
+        'Дата начала акции',
+        null=True,
+        blank=True,
+    )
+    end_date = models.DateField(
+        'Дата конца акции',
+        null=True,
+        blank=True,
+    )
+    image = models.ImageField(
+        'Картинка',
+        upload_to='promotions/images/',
+    )
+    condition = models.ManyToManyField(
+        Condition,
+        through='PromotionCondition',
+    )
 
     def __str__(self):
         return self.name
+
+
+class PromotionCondition(models.Model):
+    class Meta:
+        verbose_name = 'Акция - условие'
+        verbose_name_plural = 'Акции - условия'
+
+    promotion = models.ForeignKey(
+        Promotion,
+        on_delete=models.CASCADE,
+        related_name='conditions',
+    )
+    condition = models.ForeignKey(
+        Condition,
+        on_delete=models.CASCADE,
+        related_name='promotions',
+    )
+
+
+class Banner(models.Model):
+    class Meta:
+        verbose_name = 'Баннер'
+        verbose_name_plural = 'Баннеры'
+
+    title = models.CharField(
+        'Оглавление',
+        max_length=70,
+    )
+    description = models.TextField(
+        'Описание',
+        null=True,
+        blank=True,
+    )
+    slug = models.SlugField(
+        unique=True,
+        null=False,
+        default='',
+    )
+    image = models.ImageField(
+        'Картинка',
+        upload_to='banners/images/',
+    )
+
+    def __str__(self):
+        return self.title
+
+
+class Category(TimeBasedModel):
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+        ordering = ['created_at']
+
+    name = models.CharField(
+        'Название',
+        max_length=255,
+    )
+    description = models.TextField(
+        'Описание',
+    )
+    slug = models.SlugField(
+        unique=True,
+    )
+    image = models.ImageField(
+        'Картинка',
+        upload_to='categories/images/',
+    )
+    banner = models.ManyToManyField(
+        Banner,
+        through='CategoryBanner',
+        verbose_name='Баннер',
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class CategoryBanner(models.Model):
+    class Meta:
+        verbose_name = 'Категория - Баннер'
+        verbose_name_plural = 'Категории - Баннеры'
+
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        related_name='banners',
+    )
+    banner = models.ForeignKey(
+        Banner,
+        on_delete=models.CASCADE,
+        related_name='categories',
+    )
 
 
 class Product(TimeBasedModel):
@@ -92,9 +231,10 @@ class Product(TimeBasedModel):
         verbose_name_plural = 'Товары'
         ordering = ['-created_at']
 
-    kind = models.CharField(
-        'Разновидность',
-        max_length=50,
+    category = models.ManyToManyField(
+        Category,
+        through='ProductCategory',
+        verbose_name='Категория',
     )
     name = models.CharField(
         'Название',
@@ -155,7 +295,24 @@ class Product(TimeBasedModel):
     )
 
     def __str__(self):
-        return f'{self.kind} - {self.name}'
+        return f'{self.category} - {self.name}'
+
+
+class ProductCategory(models.Model):
+    class Meta:
+        verbose_name = 'Товар - Категория'
+        verbose_name_plural = 'Товары - Категории'
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='categories',
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        related_name='products',
+    )
 
 
 class ProductProperty(models.Model):
@@ -219,11 +376,12 @@ class Collection(TimeBasedModel):
     class Meta:
         verbose_name = 'Коллекция'
         verbose_name_plural = 'Коллекции'
-        ordering = ['kind']
+        ordering = ['name']
 
-    kind = models.CharField(
-        'Разновидность',
-        max_length=50,
+    category = models.ManyToManyField(
+        Category,
+        through='CollectionCategory',
+        verbose_name='Категория',
     )
     name = models.CharField(
         'Название',
@@ -285,6 +443,23 @@ class Collection(TimeBasedModel):
         'Картинка',
         upload_to='products/images/',
         blank=True,
+    )
+
+
+class CollectionCategory(models.Model):
+    class Meta:
+        verbose_name = 'Коллекция - Категория'
+        verbose_name_plural = 'Коллекции - Категории'
+
+    collection = models.ForeignKey(
+        Collection,
+        on_delete=models.CASCADE,
+        related_name='categories',
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        related_name='collections',
     )
 
 
