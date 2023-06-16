@@ -50,7 +50,9 @@ class SizeProductSerializer(serializers.ModelSerializer):
         return f'{obj.price}₽'
 
     def get_discount_price(self, obj):
-        return f'{math.ceil(obj.price * (1 - obj.product.discount / 100))}₽'
+        if obj.product.discount:
+            return f'{math.ceil(obj.price * (1 - obj.product.discount / 100))}₽'
+        return obj.price
 
     def get_weight(self, obj):
         return obj.weight
