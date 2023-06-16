@@ -3,16 +3,26 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 
-from .views import ProductViewSet, CollectionViewSet, LocationViewSet
+from .views import (
+    ProductViewSet,
+    # CollectionViewSet,
+    LocationViewSet,
+    ObtainAuthToken,
+    UserViewSet, PromotionViewSet, CategoryViewSet
+)
 
 router = DefaultRouter()
 
+router.register('users', UserViewSet)
 router.register('products', ProductViewSet)
-router.register('collections', CollectionViewSet)
+# router.register('collections', CollectionViewSet)
+router.register('categories', CategoryViewSet)
+router.register('promotions', PromotionViewSet)
 router.register('locations', LocationViewSet)
 
 app_name = 'app'
 urlpatterns = [
+    path('auth/token/', ObtainAuthToken.as_view(), name='get_token'),
     path('', include(router.urls)),
 ]
 
