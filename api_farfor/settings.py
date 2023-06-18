@@ -151,8 +151,9 @@ REST_FRAMEWORK = {
 
 # Настройки JWT
 SIMPLE_JWT = {
-   'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-   'AUTH_HEADER_TYPES': ('Bearer',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=3),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 # Медиа

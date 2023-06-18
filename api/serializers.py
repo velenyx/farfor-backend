@@ -1,6 +1,7 @@
 import math
 
 from rest_framework import serializers
+from rest_framework_simplejwt import tokens
 
 from .models import (
     Product,
@@ -343,6 +344,33 @@ class UserSerializer(serializers.ModelSerializer):
         source='pk', queryset=User.objects.all())
 
 
+class UserMeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'client_id',
+            'email',
+            'full_name',
+            'birthday',
+            'sex',
+            'code',
+            'is_verified',
+        )
+
+    client_id = serializers.PrimaryKeyRelatedField(
+        source='pk', queryset=User.objects.all())
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        user = self.context['user']
+
+        refresh = tokens.RefreshToken.for_user(user)
+
+        data['access'] = str(refresh.access_token)
+        data['refresh'] = str(refresh)
+        return data
+
+
 class EmailLoginSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -354,8 +382,8 @@ class EmailLoginSerializer(serializers.ModelSerializer):
 
 
 class SetPasswordSerializer(serializers.Serializer):
-    password = serializers.CharField()
-    re_password = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+    re_password = serializers.CharField(write_only=True)
 
     def validate(self, data):
         if data.get('password') != data.get('re_password'):
@@ -364,7 +392,7 @@ class SetPasswordSerializer(serializers.Serializer):
 
 
 class EmailSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=False)
+    email = serializers.EmailField(required=False, write_only=True)
 
 
 class CodeSerializer(serializers.Serializer):
