@@ -80,18 +80,7 @@ class BannerSerializer(serializers.ModelSerializer):
 class PromotionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
-        fields = ('pk', 'slug', 'image')
-
-    image = serializers.SerializerMethodField()
-
-    def get_image(self, obj):
-        return '/media/' + obj.image.name
-
-
-class DetailPromotionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Promotion
-        fields = ('pk', 'title', 'description', 'image', 'conditions')
+        fields = ('pk', 'title', 'description', 'slug', 'image', 'conditions')
 
     image = serializers.SerializerMethodField()
     conditions = serializers.SerializerMethodField()
@@ -213,17 +202,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 # Category
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ('pk', 'name', 'slug', 'image',)
-
-    image = serializers.SerializerMethodField()
-
-    def get_image(self, obj):
-        return '/media/' + obj.image.name
-
-
 class CategoryProductsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
@@ -306,11 +284,11 @@ class CategoryProductsSerializer(serializers.ModelSerializer):
             return '/media/' + obj.product.image.name
 
 
-class DetailCategorySerializer(serializers.HyperlinkedModelSerializer):
+class CategorySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Category
         fields = (
-            'pk', 'name', 'description', 'slug', 'image', 'banners', 'products',
+            'pk', 'name', 'description', 'slug', 'image', 'banners', 'products'
         )
         lookup_field = 'slug'
         extra_kwargs = {
