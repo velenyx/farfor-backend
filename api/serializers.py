@@ -81,6 +81,10 @@ class PromotionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
         fields = ('pk', 'title', 'description', 'slug', 'image', 'conditions')
+        lookup_field = 'slug'
+        extra_kwargs = {
+            'url': {'lookup_field': 'slug'}
+        }
 
     image = serializers.SerializerMethodField()
     conditions = serializers.SerializerMethodField()
@@ -282,6 +286,17 @@ class CategoryProductsSerializer(serializers.ModelSerializer):
     def get_image(self, obj):
         if obj.product.image:
             return '/media/' + obj.product.image.name
+
+
+class ShortCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('pk', 'name', 'slug', 'image')
+
+    image = serializers.SerializerMethodField()
+
+    def get_image(self, obj):
+        return '/media/' + obj.image.name
 
 
 class CategorySerializer(serializers.HyperlinkedModelSerializer):

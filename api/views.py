@@ -20,7 +20,7 @@ from .serializers import (
     EmailLoginSerializer,
     PromotionSerializer,
     CategorySerializer,
-    UserMeSerializer,
+    UserMeSerializer, ShortCategorySerializer,
 )
 
 
@@ -31,13 +31,18 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
-    serializer_class = CategorySerializer
     lookup_field = 'slug'
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ShortCategorySerializer
+        return CategorySerializer
 
 
 class PromotionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Promotion.objects.all()
     serializer_class = PromotionSerializer
+    lookup_field = 'slug'
 
 
 class LocationViewSet(viewsets.ReadOnlyModelViewSet):

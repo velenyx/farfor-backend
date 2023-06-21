@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 
 
 positive_number = validators.RegexValidator(
-    regex='^[0-9]+$',
+    regex='^[0-9.]+$',
     message='Число должно быть положительным',
 )
 

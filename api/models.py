@@ -39,6 +39,8 @@ class Property(models.Model):
     icon = models.FileField(
         'Иконка',
         upload_to='properties/images/',
+        blank=True,
+        null=True,
     )
 
     def __str__(self):
@@ -58,7 +60,7 @@ class Size(models.Model):
 
     size = models.IntegerField(
         'Размер',
-        validators=[positive_number]
+        validators=[positive_number],
     )
     measurement = models.CharField(
         'Единица измерения',
@@ -111,6 +113,8 @@ class Promotion(models.Model):
         'Цвет акции',
         max_length=16,
         validators=[validate_hex_color],
+        null=True,
+        blank=True,
     )
     start_date = models.DateField(
         'Дата начала акции',
@@ -132,7 +136,9 @@ class Promotion(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        if self.name:
+            return self.name
+        return self.title
 
 
 class PromotionCondition(models.Model):
@@ -246,6 +252,8 @@ class Product(TimeBasedModel):
     )
     description = models.TextField(
         'Описание',
+        null=True,
+        blank=True,
     )
     discount = models.IntegerField(
         'Скидка',
