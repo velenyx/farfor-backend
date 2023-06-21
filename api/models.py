@@ -36,6 +36,11 @@ class Property(models.Model):
         'Название',
         max_length=20,
     )
+    slug = models.SlugField(
+        unique=True,
+        null=False,
+        default="",
+    )
     icon = models.FileField(
         'Иконка',
         upload_to='properties/images/',

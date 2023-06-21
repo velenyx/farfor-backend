@@ -303,7 +303,14 @@ class CategorySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Category
         fields = (
-            'pk', 'name', 'description', 'slug', 'image', 'banners', 'products'
+            'pk',
+            'name',
+            'description',
+            'slug',
+            'image',
+            'banners',
+            'products',
+            'tags',
         )
         lookup_field = 'slug'
         extra_kwargs = {
@@ -314,9 +321,23 @@ class CategorySerializer(serializers.HyperlinkedModelSerializer):
     banners = BannerSerializer(many=True, read_only=True, source='banner')
     products = CategoryProductsSerializer(
         many=True, read_only=True)
+    tags = serializers.SerializerMethodField()
 
     def get_image(self, obj):
         return '/media/' + obj.image.name
+
+    def get_tags(self, obj):
+        result = []
+        for product in obj.products.all():
+            for tag in product.product.properties.all():
+                result.append(
+                    {
+                        'pk': tag.property.pk,
+                        'name': tag.property.name,
+                        'slug': tag.property.slug,
+                    }
+                )
+        return result
 
 
 # Для Users
