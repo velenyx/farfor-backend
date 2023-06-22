@@ -63,7 +63,7 @@ class Size(models.Model):
             ),
         ]
 
-    size = models.IntegerField(
+    size = models.CharField(
         'Размер',
         validators=[positive_number],
     )

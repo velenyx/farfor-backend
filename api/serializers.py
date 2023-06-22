@@ -18,6 +18,8 @@ from .models import (
     ProductCategory,
 )
 
+from .utils import get_sizes_type_of_number
+
 
 class PropertySerializer(serializers.ModelSerializer):
     class Meta:
@@ -53,7 +55,7 @@ class SizeProductSerializer(serializers.ModelSerializer):
     def get_discount_price(self, obj):
         if obj.product.discount:
             return f'{math.ceil(obj.price * (1 - obj.product.discount / 100))}₽'
-        return obj.price
+        return f'{obj.price}₽'
 
     def get_weight(self, obj):
         return obj.weight
@@ -161,11 +163,13 @@ class ProductSerializer(serializers.ModelSerializer):
         total_weight = 0
 
         for collection in obj.components.all():
-            sizes = [size.weight for size in collection.child_product.sizes.all()]
+            weights = [
+                size.weight for size in collection.child_product.sizes.all()
+            ]
             if collection.is_full:
-                total_weight += max(sizes)
+                total_weight += max(weights)
                 continue
-            total_weight += min(sizes)
+            total_weight += min(weights)
 
         if not total_weight:
             return None
@@ -178,11 +182,11 @@ class ProductSerializer(serializers.ModelSerializer):
         amount = 0
 
         for collection in obj.components.all():
-            print(collection.child_product.sizes.all())
             if collection.child_product.sizes.last().size.measurement == 'см':
                 return None
+            sizes = [i.size.size for i in collection.child_product.sizes.all()]
             sorted_sizes = sorted(
-                map(lambda x: x.size.size, collection.child_product.sizes.all())
+                map(lambda x: x, get_sizes_type_of_number(sizes))
             )
 
             if collection.is_full:
@@ -245,11 +249,13 @@ class CategoryProductsSerializer(serializers.ModelSerializer):
         total_weight = 0
 
         for collection in obj.product.components.all():
-            sizes = [size.weight for size in collection.child_product.sizes.all()]
+            weights = [
+                size.weight for size in collection.child_product.sizes.all()
+            ]
             if collection.is_full:
-                total_weight += max(sizes)
+                total_weight += max(weights)
                 continue
-            total_weight += min(sizes)
+            total_weight += min(weights)
 
         if not total_weight:
             return None
@@ -264,8 +270,9 @@ class CategoryProductsSerializer(serializers.ModelSerializer):
         for collection in obj.product.components.all():
             if collection.child_product.sizes.last().size.measurement == 'см':
                 return None
+            sizes = [i.size.size for i in collection.child_product.sizes.all()]
             sorted_sizes = sorted(
-                map(lambda x: x.size.size, collection.child_product.sizes.all())
+                map(lambda x: x, get_sizes_type_of_number(sizes))
             )
 
             if collection.is_full:
