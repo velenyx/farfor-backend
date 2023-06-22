@@ -1,4 +1,7 @@
+import math
+
 from rest_framework import serializers
+from rest_framework_simplejwt import tokens
 
 from .models import (
     Product,
@@ -9,7 +12,10 @@ from .models import (
     Promotion,
     Collection,
     Country,
-    City, Category, Banner, ProductCategory,
+    City,
+    Category,
+    Banner,
+    ProductCategory,
 )
 
 
@@ -27,7 +33,7 @@ class PropertySerializer(serializers.ModelSerializer):
 class SizeProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductSize
-        fields = ('pk', 'size', 'price', 'weight')
+        fields = ('pk', 'size', 'price', 'discount_price', 'weight')
 
     pk = serializers.PrimaryKeyRelatedField(
         queryset=Size.objects.all(),
@@ -35,6 +41,7 @@ class SizeProductSerializer(serializers.ModelSerializer):
     )
     size = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
+    discount_price = serializers.SerializerMethodField()
     weight = serializers.SerializerMethodField()
 
     def get_size(self, obj):
@@ -43,8 +50,13 @@ class SizeProductSerializer(serializers.ModelSerializer):
     def get_price(self, obj):
         return f'{obj.price}₽'
 
+    def get_discount_price(self, obj):
+        if obj.product.discount:
+            return f'{math.ceil(obj.price * (1 - obj.product.discount / 100))}₽'
+        return obj.price
+
     def get_weight(self, obj):
-        return {obj.weight}
+        return obj.weight
 
 
 class ShortPromotionSerializer(serializers.ModelSerializer):
@@ -68,18 +80,11 @@ class BannerSerializer(serializers.ModelSerializer):
 class PromotionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
-        fields = ('pk', 'slug', 'image')
-
-    image = serializers.SerializerMethodField()
-
-    def get_image(self, obj):
-        return '/media/' + obj.image.name
-
-
-class DetailPromotionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Promotion
-        fields = ('pk', 'title', 'description', 'image', 'conditions')
+        fields = ('pk', 'title', 'description', 'slug', 'image', 'conditions')
+        lookup_field = 'slug'
+        extra_kwargs = {
+            'url': {'lookup_field': 'slug'}
+        }
 
     image = serializers.SerializerMethodField()
     conditions = serializers.SerializerMethodField()
@@ -201,17 +206,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 # Category
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ('pk', 'name', 'slug', 'image',)
-
-    image = serializers.SerializerMethodField()
-
-    def get_image(self, obj):
-        return '/media/' + obj.image.name
-
-
 class CategoryProductsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
@@ -294,11 +288,29 @@ class CategoryProductsSerializer(serializers.ModelSerializer):
             return '/media/' + obj.product.image.name
 
 
-class DetailCategorySerializer(serializers.HyperlinkedModelSerializer):
+class ShortCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('pk', 'name', 'slug', 'image')
+
+    image = serializers.SerializerMethodField()
+
+    def get_image(self, obj):
+        return '/media/' + obj.image.name
+
+
+class CategorySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Category
         fields = (
-            'pk', 'name', 'description', 'slug', 'image', 'banners', 'products',
+            'pk',
+            'name',
+            'description',
+            'slug',
+            'image',
+            'banners',
+            'products',
+            'tags',
         )
         lookup_field = 'slug'
         extra_kwargs = {
@@ -309,9 +321,23 @@ class DetailCategorySerializer(serializers.HyperlinkedModelSerializer):
     banners = BannerSerializer(many=True, read_only=True, source='banner')
     products = CategoryProductsSerializer(
         many=True, read_only=True)
+    tags = serializers.SerializerMethodField()
 
     def get_image(self, obj):
         return '/media/' + obj.image.name
+
+    def get_tags(self, obj):
+        result = []
+        for product in obj.products.all():
+            for tag in product.product.properties.all():
+                result.append(
+                    {
+                        'pk': tag.property.pk,
+                        'name': tag.property.name,
+                        'slug': tag.property.slug,
+                    }
+                )
+        return result
 
 
 # Для Users
@@ -332,6 +358,33 @@ class UserSerializer(serializers.ModelSerializer):
         source='pk', queryset=User.objects.all())
 
 
+class UserMeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'client_id',
+            'email',
+            'full_name',
+            'birthday',
+            'sex',
+            'code',
+            'is_verified',
+        )
+
+    client_id = serializers.PrimaryKeyRelatedField(
+        source='pk', queryset=User.objects.all())
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        user = self.context['user']
+
+        refresh = tokens.RefreshToken.for_user(user)
+
+        data['access'] = str(refresh.access_token)
+        data['refresh'] = str(refresh)
+        return data
+
+
 class EmailLoginSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -343,8 +396,8 @@ class EmailLoginSerializer(serializers.ModelSerializer):
 
 
 class SetPasswordSerializer(serializers.Serializer):
-    password = serializers.CharField()
-    re_password = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+    re_password = serializers.CharField(write_only=True)
 
     def validate(self, data):
         if data.get('password') != data.get('re_password'):
@@ -353,7 +406,7 @@ class SetPasswordSerializer(serializers.Serializer):
 
 
 class EmailSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=False)
+    email = serializers.EmailField(required=False, write_only=True)
 
 
 class CodeSerializer(serializers.Serializer):

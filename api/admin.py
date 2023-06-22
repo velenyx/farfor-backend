@@ -1,8 +1,15 @@
 from django.contrib import admin
 
 from .models import (
-    Product, Collection, Size, Property, Promotion, Country, City, Condition,
-    Category, Banner,
+    Product,
+    Size,
+    Property,
+    Promotion,
+    Country,
+    City,
+    Condition,
+    Category,
+    Banner,
 )
 
 
@@ -27,18 +34,6 @@ class ProductCollectionInline(admin.TabularInline):
     fk_name = 'parent_product'
 
 
-# class CollectionCategoryInline(admin.TabularInline):
-#     model = Collection.category.through
-#
-#
-# class CollectionProductInline(admin.TabularInline):
-#     model = Collection.product.through
-#
-#
-# class CollectionPropertyInline(admin.TabularInline):
-#     model = Collection.property.through
-
-
 class CategoryBannerInline(admin.TabularInline):
     model = Category.banner.through
 
@@ -56,20 +51,6 @@ class ProductAdmin(admin.ModelAdmin):
     )
     search_fields = ('category', 'name',)
     empty_value_display = '--пусто--'
-
-
-# @admin.register(Collection)
-# class CollectionAdmin(admin.ModelAdmin):
-#     list_display = (
-#         'pk', 'name', 'description', 'promotion', 'discount'
-#     )
-#     inlines = (
-#         CollectionPropertyInline,
-#         CollectionProductInline,
-#         CollectionCategoryInline,
-#     )
-#     search_fields = ('category', 'name',)
-#     empty_value_display = '--пусто--'
 
 
 @admin.register(Category)
@@ -94,7 +75,8 @@ class BannerAdmin(admin.ModelAdmin):
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name')
+    list_display = ('pk', 'name', 'slug')
+    prepopulated_fields = {"slug": ("name",)}
 
 
 @admin.register(Size)

@@ -87,11 +87,11 @@ WSGI_APPLICATION = 'api_farfor.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env.str('DB_DEVELOP_NAME'),
-        'USER': env.str('DB_DEVELOP_USER'),
-        'PASSWORD': env.str('DB_DEVELOP_PASS'),
-        'HOST': env.str('DB_DEVELOP_HOST'),
-        'PORT': env.str('DB_DEVELOP_PORT'),
+        'NAME': env.str('DB_NAME'),
+        'USER': env.str('DB_USER'),
+        'PASSWORD': env.str('DB_PASS'),
+        'HOST': env.str('DB_HOST'),
+        'PORT': env.str('DB_PORT'),
     }
 }
 
@@ -117,7 +117,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru'
 
 TIME_ZONE = 'UTC'
 
@@ -151,8 +151,9 @@ REST_FRAMEWORK = {
 
 # Настройки JWT
 SIMPLE_JWT = {
-   'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-   'AUTH_HEADER_TYPES': ('Bearer',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=3),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 # Медиа
@@ -163,6 +164,7 @@ MEDIA_ROOT = Path(BASE_DIR, 'media')
 CORS_URLS_REGEX = r'^/api/.*$'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
+    'http://127.0.0.1:3000'
 ]
 
 # Подключаемся к модели CustomUser(AbstractBaseUser)
