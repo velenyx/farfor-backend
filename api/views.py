@@ -235,4 +235,3 @@ class UserViewSet(viewsets.ModelViewSet):
             'access': str(refresh.access_token)
         }
         return Response(content, status=status.HTTP_201_CREATED)
-
