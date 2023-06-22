@@ -218,24 +218,6 @@ class Category(TimeBasedModel):
         through='CategoryBanner',
         verbose_name='Баннер',
     )
-    start_date = models.DateField(
-        'Дата начала акции',
-        null=True,
-        blank=True,
-    )
-    end_date = models.DateField(
-        'Дата конца акции',
-        null=True,
-        blank=True,
-    )
-    image = models.ImageField(
-        'Картинка',
-        upload_to='promotions/images/',
-    )
-    condition = models.ManyToManyField(
-        Condition,
-        through='PromotionCondition',
-    )
 
     def __str__(self):
         return self.name
