@@ -2,11 +2,10 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.db.models import UniqueConstraint
 
-from .configs import MEASUREMENT_UNIT
 from .validators import (
     positive_number,
     validate_less_hundred,
-    validate_hex_color,
+    validate_hex_color, validate_less_ten,
 )
 
 User = get_user_model()
@@ -52,29 +51,74 @@ class Property(models.Model):
         return self.name
 
 
-class Size(models.Model):
+class KPFC(models.Model):
     class Meta:
-        verbose_name = 'Размер'
-        verbose_name_plural = 'Размеры'
-        constraints = [
-            UniqueConstraint(
-                fields=('size', 'measurement'),
-                name='unique_size',
-            ),
-        ]
+        verbose_name = 'КБЖУ'
+        verbose_name_plural = 'КБЖУ'
 
-    size = models.CharField(
-        'Размер',
+    calories = models.IntegerField(
+        'Калории',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    proteins = models.IntegerField(
+        'Белки',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    fats = models.IntegerField(
+        'Жиры',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    carbohydrates = models.IntegerField(
+        'Углероды',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+
+
+class Modification(models.Model):
+    class Meta:
+        verbose_name = 'Модификация'
+        verbose_name_plural = 'Модификации'
+
+    name = models.CharField(
+        'Название',
+        max_length=255,
+    )
+    description = models.TextField(
+        'Описание',
+        null=True,
+        blank=True,
+    )
+    mode = models.CharField(
+        'Мод',
+        null=True,
+        blank=True,
+    )
+    amount = models.IntegerField(
+        'Количество',
+        null=True,
+        blank=True,
+    )
+    price = models.IntegerField(
+        'Цена',
         validators=[positive_number],
     )
-    measurement = models.CharField(
-        'Единица измерения',
-        choices=MEASUREMENT_UNIT,
-        max_length=2,
+    weight = models.IntegerField(
+        'Вес',
+        validators=[positive_number],
+        null=True,
+        blank=True,
     )
 
     def __str__(self):
-        return f'{self.size}{self.measurement}'
+        return self.name
 
 
 class Condition(models.Model):
@@ -266,33 +310,16 @@ class Product(TimeBasedModel):
         null=True,
         blank=True,
     )
-    calorie = models.IntegerField(
-        'Калории',
-        validators=[positive_number],
-        null=True,
-        blank=True,
+    kpfc = models.ForeignKey(
+        KPFC,
+        on_delete=models.CASCADE,
+        related_name='products',
     )
-    proteins = models.IntegerField(
-        'Белки',
-        validators=[positive_number],
-        null=True,
-        blank=True,
-    )
-    fats = models.IntegerField(
-        'Жиры',
-        validators=[positive_number],
-        null=True,
-        blank=True,
-    )
-    carbohydrates = models.IntegerField(
-        'Углероды',
-        validators=[positive_number],
-        null=True,
-        blank=True,
-    )
-    collection = models.ManyToManyField(
-        "self",
-        through='Collection',
+    component = models.ManyToManyField(
+        Modification,
+        through='Component',
+        related_name='components',
+        verbose_name='Компоненты',
     )
     promotion = models.ForeignKey(
         Promotion,
@@ -301,10 +328,11 @@ class Product(TimeBasedModel):
         null=True,
         blank=True,
     )
-    size = models.ManyToManyField(
-        Size,
-        through='ProductSize',
-        verbose_name='Размеры',
+    modification = models.ManyToManyField(
+        Modification,
+        through='ProductModification',
+        related_name='products',
+        verbose_name='Модификации',
     )
     property = models.ManyToManyField(
         Property,
@@ -366,59 +394,47 @@ class ProductProperty(models.Model):
         return f'{self.product} - {self.property}'
 
 
-class ProductSize(models.Model):
+class ProductModification(models.Model):
     class Meta:
-        verbose_name = 'Тип товара'
-        verbose_name_plural = 'Типы товаров'
+        verbose_name = 'Модификация - товар'
+        verbose_name_plural = 'Модификации - товары'
 
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name='sizes',
+        related_name='modifications',
     )
-    size = models.ForeignKey(
-        Size,
+    modification = models.ForeignKey(
+        Modification,
         on_delete=models.CASCADE,
-        related_name='products',
-        verbose_name='Размер',
-    )
-    price = models.IntegerField(
-        'Цена',
-        validators=[positive_number],
-    )
-    weight = models.IntegerField(
-        'Вес',
-        validators=[positive_number],
+        verbose_name='Модификации',
     )
 
     def __str__(self):
-        return f'{self.product} - {self.size}'
+        return f'{self.product} - {self.modification}'
 
 
-class Collection(models.Model):
+class Component(models.Model):
     class Meta:
-        verbose_name = 'Коллекция'
-        verbose_name_plural = 'Коллекции'
+        verbose_name = 'Компонент'
+        verbose_name_plural = 'Компоненты'
         constraints = [
             UniqueConstraint(
-                fields=('parent_product', 'child_product'),
-                name='unique_collection',
+                fields=('product', 'modification'),
+                name='unique_component',
             ),
         ]
 
-    parent_product = models.ForeignKey(
+    product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
         related_name='components',
-    )
-    child_product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name='parents',
         verbose_name='Товар',
     )
-    is_full = models.BooleanField(
-        default=True,
+    modification = models.ForeignKey(
+        Modification,
+        on_delete=models.CASCADE,
+        verbose_name='Компоненты',
     )
 
 
@@ -464,3 +480,241 @@ class City(models.Model):
 
     def __str__(self):
         return f'{self.country} - {self.name}'
+
+
+# Адрес
+class Address(TimeBasedModel):
+    class Meta:
+        verbose_name = 'Адрес'
+        verbose_name_plural = 'Адресы'
+
+    city = models.CharField(
+        'Город',
+        max_length=255,
+        default='Липецк',
+    )
+    street = models.CharField(
+        'Улица',
+        max_length=255,
+    )
+    house = models.IntegerField(
+        'Дом',
+        validators=[positive_number],
+    )
+    apartment = models.IntegerField(
+        'Квартира',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    porch = models.IntegerField(
+        'Подъезд',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    floor = models.IntegerField(
+        'Этаж',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    intercom = models.IntegerField(
+        'Домофон',
+        validators=[positive_number],
+        null=True,
+        blank=True,
+    )
+    notes = models.TextField(
+        'Комментарий',
+        null=True,
+        blank=True,
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='addresses',
+    )
+
+    def __str__(self):
+        return f'{self.city} - {self.street}., {self.house}'
+
+
+# Доставка
+class DeliveryKind(models.Model):
+    class Meta:
+        verbose_name = 'Разновидность доставки'
+        verbose_name_plural = 'Разновидности доставки'
+
+    price = models.FloatField(
+        'Цена',
+        default=0.0
+    )
+    message = models.CharField(
+        'Сообщение',
+        max_length=255,
+    )
+    status = models.CharField(
+        'Статус доставки',
+        max_length=255,
+        default='FREE_DELIVERY'
+    )
+
+    def __str__(self):
+        return f'{self.status} - {self.message}'
+
+
+class Delivery(TimeBasedModel):
+    class Meta:
+        verbose_name = 'Доставка'
+        verbose_name_plural = 'Доставки'
+
+    method = models.CharField(
+        'Метод',
+        max_length=255,
+    )
+    delivery_kind = models.ForeignKey(
+        DeliveryKind,
+        on_delete=models.CASCADE,
+        related_name='deliveries',
+        verbose_name='Разновидность',
+    )
+    address = models.ForeignKey(
+        Address,
+        on_delete=models.CASCADE,
+        related_name='deliveries',
+        verbose_name='Адрес',
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='deliveries',
+        verbose_name='Заказчик',
+    )
+
+    def __str__(self):
+        return f'{self.address} - {self.user}'
+
+
+# Корзина
+class Bucket(TimeBasedModel):
+    class Meta:
+        verbose_name = 'Корзина'
+        verbose_name_plural = 'Корзины'
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='bucket'
+    )
+    product = models.ManyToManyField(
+        Modification,
+        through='BucketModification',
+    )
+
+    def __str__(self):
+        return f'Корзина - {self.user}'
+
+
+class BucketModification(models.Model):
+    class Meta:
+        verbose_name = 'Корзина - Товар'
+        verbose_name_plural = 'Корзины - Товары'
+        constraints = [
+            UniqueConstraint(
+                fields=('bucket', 'modification'),
+                name='unique_bucket_modification',
+            ),
+        ]
+
+    bucket = models.ForeignKey(
+        Bucket,
+        on_delete=models.CASCADE,
+        related_name='products',
+        verbose_name='Корзина',
+    )
+    modification = models.ForeignKey(
+        Modification,
+        on_delete=models.CASCADE,
+        related_name='buckets',
+        verbose_name='Товар'
+    )
+    quantity = models.IntegerField(
+        'Количество',
+        default=0,
+    )
+
+    def __str__(self):
+        return f'{self.bucket} - {self.modification} {self.quantity} шт.'
+
+
+class Order(TimeBasedModel):
+    class Meta:
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Заказы'
+
+    bucket = models.ForeignKey(
+        Bucket,
+        on_delete=models.CASCADE,
+        related_name='orders',
+        verbose_name='Корзина',
+    )
+    delivery = models.ForeignKey(
+        Delivery,
+        on_delete=models.CASCADE,
+        related_name='orders',
+        verbose_name='Доставка',
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='orders',
+        verbose_name='Заказчик',
+    )
+
+    def __str__(self):
+        return f'{self.bucket} - {self.delivery}'
+
+
+# Отзыв
+class Recall(TimeBasedModel):
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+
+    emotion = models.CharField(
+        'Эмоция',
+        choices=(
+            ('POSITIVE', 'Позитивный'),
+            ('NEUTRAL', 'Нейтральный'),
+            ('NEGATIVE', 'Негативный'),
+            ('IDEA', 'Идея'),
+        ),
+        max_length=20,
+    )
+    product_quality = models.IntegerField(
+        'Качество еды',
+        validators=[positive_number, validate_less_ten]
+    )
+    ordering = models.IntegerField(
+        'Оформление заказа',
+        validators=[positive_number, validate_less_ten]
+    )
+    delivery_speed = models.IntegerField(
+        'Скорость доставки',
+        validators=[positive_number, validate_less_ten]
+    )
+    order_number = models.IntegerField(
+        'Номер заказа',
+        validators=[positive_number]
+    )
+    comment = models.TextField(
+        'Комментарий'
+    )
+    file = models.FileField(
+        'Файл',
+        upload_to='recalls/images/',
+        blank=True,
+        null=True,
+    )
+

@@ -6,19 +6,29 @@ from rest_framework_simplejwt import tokens
 from .models import (
     Product,
     Property,
-    ProductSize,
+    ProductModification,
     User,
-    Size,
+    Modification,
     Promotion,
-    Collection,
+    Component,
     Country,
     City,
     Category,
     Banner,
     ProductCategory,
+    Delivery,
+    Address,
+    DeliveryKind,
+    Bucket,
+    BucketModification,
+    KPFC,
 )
 
-from .utils import get_sizes_type_of_number
+
+class KPFCSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KPFC
+        fields = ('calories', 'proteins', 'fats', 'carbohydrates',)
 
 
 class PropertySerializer(serializers.ModelSerializer):
@@ -32,33 +42,36 @@ class PropertySerializer(serializers.ModelSerializer):
         return '/media/' + obj.icon.name
 
 
-class SizeProductSerializer(serializers.ModelSerializer):
+class ProductModificationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProductSize
-        fields = ('pk', 'size', 'price', 'discount_price', 'weight')
+        model = ProductModification
+        fields = (
+            'pk',
+            'name',
+            'mode',
+            'amount',
+            'weight',
+            'total_price',
+            'price',
+        )
 
-    pk = serializers.PrimaryKeyRelatedField(
-        queryset=Size.objects.all(),
-        source='size.id'
-    )
-    size = serializers.SerializerMethodField()
+    name = serializers.CharField(source='modification.name')
+    mode = serializers.CharField(source='modification.mode')
+    amount = serializers.IntegerField(source='modification.amount')
+    weight = serializers.IntegerField(source='modification.weight')
+    total_price = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
-    discount_price = serializers.SerializerMethodField()
-    weight = serializers.SerializerMethodField()
 
-    def get_size(self, obj):
-        return f'{obj.size.size}{obj.size.measurement}'
+    def get_total_price(self, obj):
+        return f'{obj.modification.price}₽'
 
     def get_price(self, obj):
-        return f'{obj.price}₽'
-
-    def get_discount_price(self, obj):
-        if obj.product.discount:
-            return f'{math.ceil(obj.price * (1 - obj.product.discount / 100))}₽'
-        return f'{obj.price}₽'
-
-    def get_weight(self, obj):
-        return obj.weight
+        try:
+            price = obj.modification.price * (1 - obj.product.discount / 100)
+            price = math.ceil(price)
+            return f'{price}₽'
+        except TypeError:
+            return f'{obj.modification.price}₽'
 
 
 class ShortPromotionSerializer(serializers.ModelSerializer):
@@ -104,30 +117,21 @@ class PromotionSerializer(serializers.ModelSerializer):
         return conditions
 
 
-class ShortProductSerializer(serializers.ModelSerializer):
+class ComponentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Collection
+        model = Component
         fields = ('pk', 'name', 'description', 'image')
 
     pk = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(), source='child_product.id')
-    name = serializers.SerializerMethodField(source='child_product.name')
-    description = serializers.CharField(source='child_product.description')
+        queryset=Modification.objects.all(), source='modification.id')
+    name = serializers.CharField(source='modification.name')
+    description = serializers.CharField(source='modification.description')
     image = serializers.SerializerMethodField()
 
-    def get_name(self, obj):
-        if obj.is_full:
-            return obj.child_product.name
-        elif obj.child_product.sizes.last().size.measurement == 'шт':
-            if len(obj.child_product.sizes.all()) > 1:
-                return f'{obj.child_product.name} 1/2'
-            return obj.child_product.name
-        return (f'{obj.child_product.name} '
-                f'{obj.child_product.sizes.last().size.size}см')
-
     def get_image(self, obj):
-        if obj.child_product.image.name:
-            return '/media/' + obj.child_product.image.name
+        image = obj.modification.products.first().image
+        if image:
+            return '/media/' + image.name
 
 
 # Product
@@ -145,34 +149,29 @@ class ProductSerializer(serializers.ModelSerializer):
             'kpfc',
             'image',
             'components',
+            'modifications',
             'properties',
-            'sizes',
         )
 
     total_weight = serializers.SerializerMethodField()
     amount = serializers.SerializerMethodField()
-    kpfc = serializers.SerializerMethodField()
+    kpfc = KPFCSerializer()
     image = serializers.SerializerMethodField()
     promotion = ShortPromotionSerializer(read_only=True)
-    components = ShortProductSerializer(many=True, read_only=True)
+    components = ComponentSerializer(many=True, read_only=True)
     properties = PropertySerializer(
         many=True, read_only=True, source='property')
-    sizes = SizeProductSerializer(many=True, read_only=True)
+    modifications = ProductModificationSerializer(many=True, read_only=True)
 
     def get_total_weight(self, obj):
+        if not obj.components.all():
+            return None
+
         total_weight = 0
 
-        for collection in obj.components.all():
-            weights = [
-                size.weight for size in collection.child_product.sizes.all()
-            ]
-            if collection.is_full:
-                total_weight += max(weights)
-                continue
-            total_weight += min(weights)
+        for components in obj.components.all():
+            total_weight += components.modification.weight
 
-        if not total_weight:
-            return None
         return total_weight
 
     def get_amount(self, obj):
@@ -181,28 +180,10 @@ class ProductSerializer(serializers.ModelSerializer):
 
         amount = 0
 
-        for collection in obj.components.all():
-            if collection.child_product.sizes.last().size.measurement == 'см':
-                return None
-            sizes = [i.size.size for i in collection.child_product.sizes.all()]
-            sorted_sizes = sorted(
-                map(lambda x: x, get_sizes_type_of_number(sizes))
-            )
+        for component in obj.components.all():
+            amount += component.modification.amount
 
-            if collection.is_full:
-                amount += sorted_sizes[-1]
-            else:
-                amount += sorted_sizes[0]
-
-        return f'{amount} шт'
-
-    def get_kpfc(self, obj):
-        return {
-            'calorie': obj.calorie,
-            'proteins': obj.proteins,
-            'fats': obj.fats,
-            'carbohydrates': obj.carbohydrates
-        }
+        return amount
 
     def get_image(self, obj):
         if obj.image:
@@ -225,7 +206,7 @@ class CategoryProductsSerializer(serializers.ModelSerializer):
             'image',
             'components',
             'properties',
-            'sizes',
+            'modifications',
         )
 
     pk = serializers.PrimaryKeyRelatedField(
@@ -237,28 +218,24 @@ class CategoryProductsSerializer(serializers.ModelSerializer):
     total_weight = serializers.SerializerMethodField()
     amount = serializers.SerializerMethodField()
     discount = serializers.IntegerField(source='product.discount')
-    kpfc = serializers.SerializerMethodField()
+    kpfc = KPFCSerializer(source='product')
     image = serializers.SerializerMethodField()
-    components = ShortProductSerializer(many=True, read_only=True, source='product.components')
+    components = ComponentSerializer(
+        many=True, read_only=True, source='product.components')
     properties = PropertySerializer(
         many=True, read_only=True, source='product.property')
-    sizes = SizeProductSerializer(
-        many=True, read_only=True, source='product.sizes')
+    modifications = ProductModificationSerializer(
+        many=True, read_only=True, source='product.modifications')
 
     def get_total_weight(self, obj):
+        if not obj.product.components.all():
+            return None
+
         total_weight = 0
 
-        for collection in obj.product.components.all():
-            weights = [
-                size.weight for size in collection.child_product.sizes.all()
-            ]
-            if collection.is_full:
-                total_weight += max(weights)
-                continue
-            total_weight += min(weights)
+        for components in obj.product.components.all():
+            total_weight += components.modification.weight
 
-        if not total_weight:
-            return None
         return total_weight
 
     def get_amount(self, obj):
@@ -267,28 +244,10 @@ class CategoryProductsSerializer(serializers.ModelSerializer):
 
         amount = 0
 
-        for collection in obj.product.components.all():
-            if collection.child_product.sizes.last().size.measurement == 'см':
-                return None
-            sizes = [i.size.size for i in collection.child_product.sizes.all()]
-            sorted_sizes = sorted(
-                map(lambda x: x, get_sizes_type_of_number(sizes))
-            )
+        for component in obj.product.components.all():
+            amount += component.modification.amount
 
-            if collection.is_full:
-                amount += sorted_sizes[-1]
-            else:
-                amount += sorted_sizes[0]
-
-        return f'{amount} шт'
-
-    def get_kpfc(self, obj):
-        return {
-            'calorie': obj.product.calorie,
-            'proteins': obj.product.proteins,
-            'fats': obj.product.fats,
-            'carbohydrates': obj.product.carbohydrates
-        }
+        return amount
 
     def get_image(self, obj):
         if obj.product.image:
@@ -345,6 +304,164 @@ class CategorySerializer(serializers.HyperlinkedModelSerializer):
                     }
                 )
         return result
+
+
+# Адрес
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = (
+            'pk',
+            'city',
+            'street',
+            'house',
+            'apartment',
+            'porch',
+            'floor',
+            'intercom',
+            'notes',
+            'user'
+        )
+
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+
+# Для Delivery
+class DeliveryKindSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryKind
+        fields = ('price', 'message', 'status')
+
+
+class DeliveryPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Delivery
+        fields = (
+            'pk',
+            'method',
+            'delivery_kind',
+            'address_id',
+            'user',
+        )
+
+    delivery_kind = serializers.CharField(source='delivery_kind.status')
+    address_id = serializers.PrimaryKeyRelatedField(
+        source='address', queryset=Address.objects.all())
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    def create(self, validated_data):
+        delivery_status = validated_data.get('delivery_kind')
+
+        delivery_kind, _ = DeliveryKind.objects.get_or_create(
+            status=delivery_status.get('status'))
+
+        delivery = Delivery.objects.create(
+            method=validated_data.get('method'),
+            address=validated_data.get('address'),
+            delivery_kind=delivery_kind,
+            user=validated_data.get('user'),
+        )
+
+        return delivery
+
+    def update(self, instance, validated_data):
+        try:
+            delivery_status = validated_data.pop('delivery_kind')
+
+            delivery_kind, _ = DeliveryKind.objects.get_or_create(
+                status=delivery_status.get('status'))
+
+            instance.delivery_kind = delivery_kind
+        except Exception as _:
+            pass
+
+        super().update(instance, validated_data)
+        return instance
+
+
+class DeliverySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Delivery
+        fields = (
+            'pk',
+            'method',
+            'cost',
+            'address_id',
+        )
+
+    cost = DeliveryKindSerializer(source='delivery_kind')
+    address_id = serializers.PrimaryKeyRelatedField(
+        source='address', queryset=Address.objects.all())
+
+
+# Для Bucket
+class BucketProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BucketModification
+        fields = (
+            'pk',
+            'name',
+            'description',
+            'price',
+            'total_price',
+            'weight',
+            'image',
+            'quantity',
+        )
+
+    pk = serializers.PrimaryKeyRelatedField(
+        queryset=Modification.objects.all())
+    name = serializers.CharField(source='modification.name')
+    description = serializers.CharField(source='modification.description')
+    price = serializers.SerializerMethodField()
+    total_price = serializers.SerializerMethodField()
+    weight = serializers.IntegerField(source='modification.weight')
+    image = serializers.SerializerMethodField()
+
+    def get_total_price(self, obj):
+        return f'{obj.modification.price}₽'
+
+    def get_price(self, obj):
+        try:
+            price = obj.modification.price * (1 - obj.modification.products.first().discount / 100)
+            price = math.ceil(price)
+            return f'{price}₽'
+        except TypeError:
+            return f'{obj.modification.price}₽'
+
+    def get_image(self, obj):
+        return '/media/' + obj.modification.products.first().image.name
+
+
+class BucketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bucket
+        fields = ('pk', 'products', 'products_count', 'price')
+
+    products = BucketProductSerializer(many=True)
+    products_count = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+
+    def get_products_count(self, obj):
+        if not obj.products.all():
+            return None
+        return len(obj.products.all())
+
+    def get_price(self, obj):
+        if not obj.products.all():
+            return None
+
+        price = 0
+
+        for product in obj.products.all():
+            modification = product.modification
+
+            discount = 1 - (modification.products.first().discount / 100)
+            discount_price = math.ceil(modification.price * discount)
+
+            price += discount_price * product.quantity
+
+        return f"{price}₽"
 
 
 # Для Users
@@ -423,14 +540,14 @@ class CodeSerializer(serializers.Serializer):
         code = data.get('code')
         if len(code) > 5:
             raise serializers.ValidationError(
-                'Поле code должно быть меньше 5')
-        for v in code:
-            try:
-                int(v)
-            except Exception:
-                raise serializers.ValidationError(
-                    'Поле code должна состоять из цифр'
-                )
+                'В поле code элементов должно быть равно 5')
+
+        try:
+            int(code)
+        except Exception:
+            raise serializers.ValidationError(
+                'Поле code должна состоять из цифр'
+            )
 
         return data
 
