@@ -717,4 +717,3 @@ class Recall(TimeBasedModel):
         blank=True,
         null=True,
     )
-

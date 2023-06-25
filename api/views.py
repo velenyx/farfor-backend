@@ -71,11 +71,7 @@ class DeliveryViewSet(viewsets.ModelViewSet):
 
 class BucketViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Bucket.objects.all()
-
-    def get_serializer_class(self):
-        if self.action in ('add_product',):
-            return
-        return BucketSerializer
+    serializer_class = BucketSerializer
 
     @action(methods=['GET'],
             detail=False,
@@ -93,6 +89,7 @@ class BucketViewSet(viewsets.ReadOnlyModelViewSet):
         modification = get_object_or_404(
             ProductModification, pk=request.data.get('pk')).modification
         bucket = get_object_or_404(Bucket, user=request.user)
+        serializer = self.get_serializer(bucket)
 
         try:
             bucket_modification = BucketModification.objects.create(
@@ -106,7 +103,7 @@ class BucketViewSet(viewsets.ReadOnlyModelViewSet):
 
         bucket_modification.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(methods=['POST'],
             detail=False,
@@ -114,17 +111,19 @@ class BucketViewSet(viewsets.ReadOnlyModelViewSet):
             url_path='remove-product',)
     def remove_product(self, request):
         bucket = get_object_or_404(Bucket, user=request.user)
-
         bucket_modification = get_object_or_404(
             BucketModification,
             bucket=bucket, modification__pk=request.data.get('pk')
         )
+        serializer = self.get_serializer(bucket)
 
-        bucket_modification.quantity = bucket_modification.quantity - 1
+        if bucket_modification.quantity > 1:
+            bucket_modification.quantity = bucket_modification.quantity - 1
+            bucket_modification.save()
+        else:
+            bucket_modification.delete()
 
-        bucket_modification.save()
-
-        return Response(status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class PromotionViewSet(viewsets.ReadOnlyModelViewSet):
