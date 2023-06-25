@@ -19,7 +19,7 @@ from .models import (
     Category,
     Delivery,
     Address,
-    Bucket, ProductModification, BucketModification
+    Bucket, ProductModification, BucketModification, Recall
 )
 from .serializers import (
     ProductSerializer,
@@ -35,7 +35,7 @@ from .serializers import (
     ShortCategorySerializer,
     DeliverySerializer,
     DeliveryPostSerializer,
-    AddressSerializer, BucketSerializer,
+    AddressSerializer, BucketSerializer, RecallSerializer,
 )
 
 
@@ -67,6 +67,12 @@ class DeliveryViewSet(viewsets.ModelViewSet):
         if self.action in ('create', 'update', 'partial_update',):
             return DeliveryPostSerializer
         return DeliverySerializer
+
+
+class RecallViewSet(viewsets.ModelViewSet):
+    queryset = Recall.objects.all()
+    serializer_class = RecallSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class BucketViewSet(viewsets.ReadOnlyModelViewSet):

@@ -682,14 +682,16 @@ class Recall(TimeBasedModel):
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
 
+    EMOTIONS = (
+        ('POSITIVE', 'Позитивный'),
+        ('NEUTRAL', 'Нейтральный'),
+        ('NEGATIVE', 'Негативный'),
+        ('IDEA', 'Идея'),
+    )
+
     emotion = models.CharField(
         'Эмоция',
-        choices=(
-            ('POSITIVE', 'Позитивный'),
-            ('NEUTRAL', 'Нейтральный'),
-            ('NEGATIVE', 'Негативный'),
-            ('IDEA', 'Идея'),
-        ),
+        choices=EMOTIONS,
         max_length=20,
     )
     product_quality = models.IntegerField(
@@ -709,7 +711,9 @@ class Recall(TimeBasedModel):
         validators=[positive_number]
     )
     comment = models.TextField(
-        'Комментарий'
+        'Комментарий',
+        blank=True,
+        null=True,
     )
     file = models.FileField(
         'Файл',

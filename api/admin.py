@@ -12,7 +12,7 @@ from .models import (
     Bucket,
     Address,
     DeliveryKind,
-    Delivery, Order, Modification, KPFC,
+    Delivery, Order, Modification, KPFC, Recall,
 )
 
 
@@ -65,6 +65,18 @@ class DeliveryAdmin(admin.ModelAdmin):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('pk', 'bucket', 'delivery')
+
+
+@admin.register(Recall)
+class RecallAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'emotion',
+        'product_quality',
+        'ordering',
+        'delivery_speed',
+        'order_number'
+    )
 
 
 @admin.register(Address)

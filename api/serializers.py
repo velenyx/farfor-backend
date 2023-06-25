@@ -21,7 +21,7 @@ from .models import (
     DeliveryKind,
     Bucket,
     BucketModification,
-    KPFC,
+    KPFC, Recall,
 )
 
 
@@ -462,6 +462,32 @@ class BucketSerializer(serializers.ModelSerializer):
             price += discount_price * product.quantity
 
         return f"{price}₽"
+
+
+# Для Recalls
+class RecallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recall
+        fields = (
+            'pk',
+            'emotion',
+            'product_quality',
+            'ordering',
+            'delivery_speed',
+            'order_number',
+            'comment',
+            'file',
+        )
+
+    file = serializers.FileField(write_only=True, required=False)
+
+    def create(self, validated_data):
+        if validated_data.get('file'):
+            file = validated_data.pop('file')
+            instance = Recall.objects.create(**validated_data)
+            instance.file.save(file.name, file)
+            return instance
+        return Recall.objects.create(**validated_data)
 
 
 # Для Users
