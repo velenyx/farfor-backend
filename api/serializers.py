@@ -2,6 +2,7 @@ import math
 
 from rest_framework import serializers
 from rest_framework_simplejwt import tokens
+from drf_base64.fields import Base64FileField
 
 from .models import (
     Product,
@@ -479,15 +480,27 @@ class RecallSerializer(serializers.ModelSerializer):
             'file',
         )
 
-    file = serializers.FileField(write_only=True, required=False)
+    file = serializers.SerializerMethodField()
 
-    def create(self, validated_data):
-        if validated_data.get('file'):
-            file = validated_data.pop('file')
-            instance = Recall.objects.create(**validated_data)
-            instance.file.save(file.name, file)
-            return instance
-        return Recall.objects.create(**validated_data)
+    def get_file(self, obj):
+        return '/media/' + obj.file.name if obj.file else None
+
+
+class RecallPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recall
+        fields = (
+            'pk',
+            'emotion',
+            'product_quality',
+            'ordering',
+            'delivery_speed',
+            'order_number',
+            'comment',
+            'file',
+        )
+
+    file = Base64FileField(required=False, write_only=True)
 
 
 # Для Users

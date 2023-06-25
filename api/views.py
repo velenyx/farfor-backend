@@ -36,6 +36,7 @@ from .serializers import (
     DeliverySerializer,
     DeliveryPostSerializer,
     AddressSerializer, BucketSerializer, RecallSerializer,
+    RecallPostSerializer,
 )
 
 
@@ -73,6 +74,11 @@ class RecallViewSet(viewsets.ModelViewSet):
     queryset = Recall.objects.all()
     serializer_class = RecallSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update',):
+            return RecallPostSerializer
+        return RecallSerializer
 
 
 class BucketViewSet(viewsets.ReadOnlyModelViewSet):

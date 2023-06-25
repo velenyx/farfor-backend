@@ -717,7 +717,7 @@ class Recall(TimeBasedModel):
     )
     file = models.FileField(
         'Файл',
-        upload_to='recalls/images/',
+        upload_to='recalls/files/',
         blank=True,
         null=True,
     )
