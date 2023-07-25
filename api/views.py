@@ -112,7 +112,6 @@ class BucketViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
         bucket_modification.quantity = bucket_modification.quantity + 1
-
         bucket_modification.save()
 
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -9,7 +9,10 @@ from .views import (
     UserViewSet,
     PromotionViewSet,
     CategoryViewSet,
-    DeliveryViewSet, AddressViewSet, BucketViewSet, RecallViewSet,
+    DeliveryViewSet,
+    AddressViewSet,
+    BucketViewSet,
+    RecallViewSet,
 )
 
 router = DefaultRouter()

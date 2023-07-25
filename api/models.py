@@ -5,7 +5,8 @@ from django.db.models import UniqueConstraint
 from .validators import (
     positive_number,
     validate_less_hundred,
-    validate_hex_color, validate_less_ten,
+    validate_hex_color,
+    validate_less_ten,
 )
 
 User = get_user_model()
