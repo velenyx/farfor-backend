@@ -16,6 +16,14 @@ validate_hex_color = validators.RegexValidator(
 def validate_less_hundred(value):
     if value > 100:
         raise ValidationError(
-            "%(value)s is not an even number",
+            "%(value)s is not less hundred",
+            params={"value": value},
+        )
+
+
+def validate_less_ten(value):
+    if value > 10:
+        raise ValidationError(
+            "%(value)s is not less than ten",
             params={"value": value},
         )

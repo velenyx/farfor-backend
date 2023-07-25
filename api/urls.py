@@ -9,6 +9,10 @@ from .views import (
     UserViewSet,
     PromotionViewSet,
     CategoryViewSet,
+    DeliveryViewSet,
+    AddressViewSet,
+    BucketViewSet,
+    RecallViewSet,
 )
 
 router = DefaultRouter()
@@ -16,6 +20,10 @@ router = DefaultRouter()
 router.register('users', UserViewSet)
 router.register('products', ProductViewSet)
 router.register('categories', CategoryViewSet)
+router.register('addresses', AddressViewSet)
+router.register('deliveries', DeliveryViewSet)
+router.register('buckets', BucketViewSet)
+router.register('recalls', RecallViewSet)
 router.register('promotions', PromotionViewSet)
 router.register('locations', LocationViewSet)
 

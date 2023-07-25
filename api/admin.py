@@ -2,7 +2,6 @@ from django.contrib import admin
 
 from .models import (
     Product,
-    Size,
     Property,
     Promotion,
     Country,
@@ -10,6 +9,10 @@ from .models import (
     Condition,
     Category,
     Banner,
+    Bucket,
+    Address,
+    DeliveryKind,
+    Delivery, Order, Modification, KPFC, Recall,
 )
 
 
@@ -21,33 +24,77 @@ class ProductPropertyInline(admin.TabularInline):
     model = Product.property.through
 
 
-class ProductSizeInline(admin.TabularInline):
-    model = Product.size.through
+class ProductModificationInline(admin.TabularInline):
+    model = Product.modification.through
 
 
 class ProductCategoryInline(admin.TabularInline):
     model = Product.category.through
 
 
-class ProductCollectionInline(admin.TabularInline):
-    model = Product.collection.through
-    fk_name = 'parent_product'
+class ProductComponentInline(admin.TabularInline):
+    model = Product.component.through
 
 
 class CategoryBannerInline(admin.TabularInline):
     model = Category.banner.through
 
 
+class BucketProductInline(admin.TabularInline):
+    model = Bucket.product.through
+
+
+@admin.register(Bucket)
+class BucketAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'user',)
+    inlines = (BucketProductInline,)
+
+
+@admin.register(DeliveryKind)
+class DeliveryCostAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'status', 'message', 'price')
+    search_fields = ('status',)
+
+
+@admin.register(Delivery)
+class DeliveryAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'method')
+    search_fields = ('method', 'delivery_kind', 'address', 'user',)
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'bucket', 'delivery')
+
+
+@admin.register(Recall)
+class RecallAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'emotion',
+        'product_quality',
+        'ordering',
+        'delivery_speed',
+        'order_number'
+    )
+
+
+@admin.register(Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'city', 'street', 'house')
+    search_fields = ('city', 'street',)
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
-        'pk', 'name', 'description', 'promotion', 'discount'
+        'pk', 'name', 'description', 'promotion'
     )
     inlines = (
         ProductPropertyInline,
-        ProductSizeInline,
+        ProductModificationInline,
         ProductCategoryInline,
-        ProductCollectionInline,
+        ProductComponentInline,
     )
     search_fields = ('category', 'name',)
     empty_value_display = '--пусто--'
@@ -79,9 +126,14 @@ class PropertyAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
 
-@admin.register(Size)
-class SizeAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'size', 'measurement')
+@admin.register(KPFC)
+class KPFCAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'calories', 'proteins', 'fats', 'carbohydrates',)
+
+
+@admin.register(Modification)
+class ModificationAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'mode', 'amount', 'price', 'weight',)
 
 
 @admin.register(Country)
