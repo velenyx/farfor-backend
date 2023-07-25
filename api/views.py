@@ -19,7 +19,10 @@ from .models import (
     Category,
     Delivery,
     Address,
-    Bucket, ProductModification, BucketModification, Recall
+    Bucket,
+    ProductModification,
+    BucketModification,
+    Recall,
 )
 from .serializers import (
     ProductSerializer,
@@ -35,7 +38,9 @@ from .serializers import (
     ShortCategorySerializer,
     DeliverySerializer,
     DeliveryPostSerializer,
-    AddressSerializer, BucketSerializer, RecallSerializer,
+    AddressSerializer,
+    BucketSerializer,
+    RecallSerializer,
     RecallPostSerializer,
 )
 
